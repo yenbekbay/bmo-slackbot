@@ -37,7 +37,7 @@ const bot = controller
 const speaker = new Speaker(bot, globalLogger);
 
 controller.hears(
-  '^(ios|android)\\slib(?:rarie)?s\\slist$',
+  '^(ios|android)\\s+lib(?:rarie)?s\\s+list$',
   ['direct_message', 'direct_mention'], (bot, message) => {
     const channel = message.channel;
     const platform = message.match[1].toLowerCase();
@@ -56,7 +56,7 @@ controller.hears(
   });
 
 controller.hears(
-  '^(ios|android)\\slib(?:rarie)?s(?:\\sfor\\s|\\s)(.+)$',
+  '^(ios|android)\\s+lib(?:rarie)?s(?:\\s+for\\s+|\\s+)(.+)$',
   ['direct_message', 'direct_mention'], (bot, message) => {
     const channel = message.channel;
     const platform = message.match[1].toLowerCase();
@@ -93,7 +93,7 @@ controller.hears(
   });
 
 controller.hears(
-  '^(?:hi|hello|whatsup|howdy|greetings|privet|salem)(?:\\s.*)?$',
+  '^(?:hi|hello|whatsup|howdy|greetings|privet|salem)(?:\\s+.*)?$',
   ['direct_message', 'direct_mention'], (bot, message) => {
     Rx.Observable
       .fromNodeCallback(bot.api.users.info)({ user: message.user })
@@ -218,7 +218,7 @@ controller.on('reaction_added', (bot, message) => {
 });
 
 controller.hears(
-  '^\\s?score\\s?$',
+  '^\\s*score\\s*$',
   ['direct_message', 'direct_mention'], (bot, message) => {
     getUsername(message.user)
       .flatMap(username => brain.getUserScore(username)
@@ -232,7 +232,7 @@ controller.hears(
   });
 
 controller.hears(
-  '^\\s?leaderboard\\s?$',
+  '^\\s*leaderboard\\s*$',
   ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
     scoreKeeper.getUserScores()
       .flatMap(scores => speaker.sayMessage(message.channel, scores))
@@ -241,7 +241,7 @@ controller.hears(
   });
 
 controller.hears(
-  '^\\s?what\\stime(\\sis\\sit)?\\s?\\??\\s?$',
+  '^\\s*what\\s+time(\\s+is\\s+it)?\\s*\\??\\s*$',
   ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
     speaker.adventureTime(message.channel)
       .catch(err => speaker.sayError(message.channel, err))
@@ -249,7 +249,7 @@ controller.hears(
   });
 
 controller.hears(
-  '^\\s?score\\s(?:for\\s)?@?(.*)\\s?$',
+  '^\\s*score\\s+(?:for\\s+)?@?(?!.*<)(.*)\\s*$',
   ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
     const username = message.match[1];
 
