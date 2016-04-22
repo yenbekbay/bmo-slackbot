@@ -68,6 +68,19 @@ function firstEntityValue(entities, entity) {
   return typeof val === 'object' ? val.value : val;
 }
 
+function formattedPlatform(platform) {
+  if (platform.toLowerCase() === 'ios') {
+    return 'iOS';
+  } else if (platform.toLowerCase() === 'android') {
+    return 'Android';
+  } else {
+    return platform.replace(
+      /\w\S*/g,
+      str => str.charAt(0).toUpperCase() + str.substr(1).toLowerCase()
+    );
+  }
+}
+
 const greetings = [
   'Hey there!',
   'Greetings, human!',
@@ -140,6 +153,21 @@ const actions = {
     if (!context.platform || !context.query) {
       actions.error(sessionId, context);
       return cb(context);
+    }
+
+    if (context.query.toLowerCase() === 'list') {
+      return libraryEngine.getCategories(context.platform)
+        .subscribe(categoriesTree => {
+          const pretext = 'Library categories for ' +
+            formattedPlatform(context.platform) + ':';
+          actions.say(sessionId, context, {
+            text: pretext + '\n```\n' + categoriesTree + '\n```',
+            mrkdwn: true
+          }, cb);
+        }, err => {
+          actions.error(sessionId, context, err);
+          cb(context);
+        });
     }
 
     libraryEngine.getLibrariesForQuery(context.platform, context.query)
