@@ -125,7 +125,7 @@ function getUsername(user) {
 
 controller.hears(
   '^\\s*<@(U.+)>\\s*:?\\s*([-+]{2})\\s*$',
-  ['direct_message'], (bot, message) => {
+  ['ambient'], (bot, message) => {
     const user = message.match[1];
     const operator = message.match[2];
 
@@ -156,7 +156,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*@?([\\w\\.\\-]*)\\s*:?\\s*([-+]{2})\\s*$',
-  ['direct_message'], (bot, message) => {
+  ['ambient'], (bot, message) => {
     const username = message.match[1];
     const operator = message.match[2];
 
