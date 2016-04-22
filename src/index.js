@@ -241,6 +241,14 @@ controller.hears(
   });
 
 controller.hears(
+  '^\\s?what\\stime(\\sis\\sit)?\\s?\\??\\s?$',
+  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
+    speaker.adventureTime(message.channel)
+      .catch(err => speaker.sayError(message.channel, err))
+      .subscribe();
+  });
+
+controller.hears(
   '^\\s?score\\s(?:for\\s)?@?(.*)\\s?$',
   ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
     const username = message.match[1];
