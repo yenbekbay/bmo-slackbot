@@ -29,7 +29,8 @@
     "request": "^2.72.0",
     "rx-lite": "^4.0.8",
     "winston": "^2.2.0",
-    "winston-papertrail": "^1.0.2"
+    "winston-papertrail": "^1.0.2",
+    "yargs-parser": "^2.4.0"
   },
   "devDependencies": {
     "eslint": "^2.1.0",

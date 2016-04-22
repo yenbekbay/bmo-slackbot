@@ -1,11 +1,14 @@
 'use strict';
 
 const Botkit = require('botkit');
+const Rx = require('rx-lite');
 const Wit = require('node-wit').Wit;
+const yargsParser = require('yargs-parser');
 
+const levels = require('./logger').logLevels;
 const LibraryEngine = require('./library-engine');
 const Logger = require('./logger').Logger;
-const levels = require('./logger').logLevels;
+const Speaker = require('./speaker');
 
 const slackToken = process.env.SLACK_TOKEN;
 const witToken = process.env.WIT_TOKEN;
@@ -24,15 +27,7 @@ const bot = controller
 
     logger.log('Connected to Slack');
   });
-
-// This will contain all user sessions
-// Each session has an entry:
-// sessionId -> {
-//   channel: messageChannel,
-//   user: messageUser,
-//   context: sessionState
-// }
-let sessions = {};
+const speaker = Speaker(bot, logger);
 
 function findOrCreateSession(message) {
   let sessionId;
@@ -81,117 +76,46 @@ function formattedPlatform(platform) {
   }
 }
 
-const greetings = [
-  'Hey there!',
-  'Greetings, human!',
-  'Yo!',
-  'Salem!',
-  'Privet!'
-];
+controller.hears(
+  '^(ios|android)\\slib(?:rarie)?s\\slist$',
+  ['direct_message', 'direct_mention'], (bot, message) => {
+    const channel = message.channel;
+    const platform = message.match[1].toLowerCase();
 
-const actions = {
-  say(sessionId, context, message, cb) {
-    const session = sessions[sessionId];
-    if (session && session.channel) {
-      const channel = session.channel;
-
-      let messageObject = {};
-      if (!message) {
-        messageObject.text = 'Something went wrong. Please try again or ' +
-          'contact @yenbekbay';
-      } else if (typeof message === 'object') {
-        messageObject = message;
-      } else {
-        messageObject.text = message;
-      }
-      messageObject.channel = channel;
-
-      bot.say(messageObject, (err, response) => {
-        if (err) {
-          logger.error('Oops! An error occurred while forwarding the ' +
-            'response to channel ' + channel + ':' + err);
-        }
-
-        cb();
-      });
-    } else {
-      logger.error('Oops! Couldn\'t find session for id:', sessionId);
-      cb();
-    }
-  },
-  merge(sessionId, context, entities, message, cb) {
-    const platform = firstEntityValue(entities, 'platform');
-    if (platform) {
-      context.platform = platform;
-    }
-    const query = firstEntityValue(entities, 'query');
-    if (query) {
-      context.query = query;
-    }
-    const flags = firstEntityValue(entities, 'flags');
-    if (flags) {
-      context.flags = flags;
-    }
-
-    cb(context);
-  },
-  error(sessionId, context, err) {
-    logger.error(err);
-    const channel = sessions[sessionId].channel;
-    if (channel) {
-      bot.say({
-        text: 'Something went wrong. Please try again or contact @yenbekbay',
-        channel: channel
-      });
-    }
-  },
-  ['select-greeting'](sessionId, context, cb) {
-    context.greeting = greetings[Math.floor(Math.random() * greetings.length)];
-    cb(context);
-  },
-  ['search-libraries'](sessionId, context, cb) {
-    if (!context.platform || !context.query) {
-      actions.error(sessionId, context);
-      return cb(context);
-    }
-
-    if (context.query.toLowerCase() === 'list') {
-      return libraryEngine.getCategories(context.platform)
-        .subscribe(categoriesTree => {
-          const pretext = 'Library categories for ' +
-            formattedPlatform(context.platform) + ':';
-          actions.say(sessionId, context, {
-            text: pretext + '\n```\n' + categoriesTree + '\n```',
-            mrkdwn: true
-          }, cb);
-        }, err => {
-          actions.error(sessionId, context, err);
-          cb(context);
+    libraryEngine.getCategories(platform)
+      .flatMap(categoriesTree => {
+        const pretext = 'Library categories for ' +
+          formattedPlatform(platform) + ':';
+        return speaker.sayMessage(channel, {
+          text: pretext + '\n```\n' + categoriesTree + '\n```',
+          mrkdwn: true
         });
-    }
+      })
+      .catch(err => speaker.sayError(channel, err))
+      .subscribe();
+  });
 
-    libraryEngine.getLibrariesForQuery(context.platform, context.query)
-      .subscribe(libraries => {
+controller.hears(
+  '^(ios|android)\\slib(?:rarie)?s(?:\\sfor\\s|\\s)(.+)$',
+  ['direct_message', 'direct_mention'], (bot, message) => {
+    const channel = message.channel;
+    const platform = message.match[1].toLowerCase();
+    const queryArgs = yargsParser(message.match[2]);
+    const query = queryArgs._.join(' ') +
+      queryArgs.swift ? ' (Swift only)' : '';
+    console.log('platform:', platform, ', query:', query);
+
+    libraryEngine.getLibrariesForQuery(platform, query)
+      .flatMap(libraries => {
         let message = {
           text: 'Unfortunately, no libraries were found for this category.'
         };
         if (libraries && libraries.length > 0) {
-          let query = context.query.replace(
-            /\w\S*/g,
-            str => str.charAt(0).toUpperCase() + str.substr(1).toLowerCase()
-          );
-          if (context.flags) {
-            const flags = context.flags
-              .trim()
-              .split(' ')
-              .map(flag => flag.replace('--', '').trim());
-            if (flags && flags.indexOf('swift') > -1) {
-              libraries = libraries.filter(library => library.swift);
-              query += ' (Swift only)';
-            }
+          if (queryArgs.swift) {
+            libraries = libraries.filter(library => library.swift);
           }
           message.text = 'These are some ' +
-            formattedPlatform(context.platform) + ' libraries I found for ' +
+            formattedPlatform(platform) + ' libraries I found for ' +
             query + ':';
           message.attachments = libraries.map(library => {
             return {
@@ -202,47 +126,25 @@ const actions = {
             };
           });
         }
-        actions.say(sessionId, context, message, cb);
-      }, err => {
-        actions.error(sessionId, context, err);
-        cb(context);
-      });
-  }
-};
 
-const wit = new Wit(witToken, actions, logger);
-
-controller.hears('.*', 'direct_message,direct_mention', (bot, message) => {
-  const sessionId = findOrCreateSession(message);
-
-  wit.runActions(
-    sessionId,
-    message.match[0],
-    sessions[sessionId].context,
-    (err, context) => {
-      if (err) {
-        logger.error('Oops! Got an error from Wit:', err);
-      } else {
-        // Reset the session
-        delete sessions[sessionId];
-      }
-    }
-  );
-});
+        return speaker.sayMessage(channel, message);
+      })
+      .catch(err => speaker.sayError(channel, err))
+      .subscribe();
+  });
 
 controller.on('user_channel_join', (bot, message) => {
-  bot.api.channels.info({ channel: message.channel }, (err, response) => {
-    if (err) {
-      return logger.error('Failed to get channel information:', err);
-    }
-    if (!response.channel || response.channel.name !== 'intro') {
-      return;
-    }
-
-    bot.api.users.info({ user: message.user }, (err, response) => {
-      if (err) {
-        return logger.error('Failed to get user information:', err);
+  Rx.Observable
+    .fromNodeCallback(bot.api.channels.info)({ channel: message.channel })
+    .flatMap(response => {
+      if (!response.channel || response.channel.name !== 'intro') {
+        return Rx.Observable.empty();
       }
+
+      return Rx.Observable
+        .fromNodeCallback(bot.api.users.info)({ user: message.user });
+    })
+    .subscribe(response => {
       if (response.user && response.user.name) {
         const questions = [
           'Как тебя зовут?',
@@ -253,6 +155,45 @@ controller.on('user_channel_join', (bot, message) => {
         bot.reply(message, 'Добро пожаловать, @' + response.user.name + '! ' +
           'Не мог бы ты вкратце рассказать о себе?\n' + questions);
       }
-    });
-  });
+    }, err => logger.error('Failed to greet a newcomer:', err));
+});
+
+const actions = {
+  say(sessionId, context, message, cb) {
+    const session = sessions[sessionId] || {};
+    speaker.sayMessage(session.channel, message).finally(cb).subscribe();
+  },
+  merge(sessionId, context, entities, message, cb) {
+    cb(context);
+  },
+  error(sessionId, context, err) {
+    logger.error(err);
+
+    const session = sessions[sessionId] || {};
+    speaker.sayError(session.channel, err);
+  }
+};
+
+// This will contain all user sessions
+// Each session has an entry:
+// sessionId -> {
+//   channel: messageChannel,
+//   user: messageUser,
+//   context: sessionState
+// }
+let sessions = {};
+
+const wit = new Wit(witToken, actions, logger);
+
+controller.hears('.*', ['direct_message', 'direct_mention'], (bot, message) => {
+  const sessionId = findOrCreateSession(message);
+  const text = message.match[0];
+  const context = sessions[sessionId].context;
+
+  Rx.Observable
+    .fromNodeCallback(wit.runActions)(sessionId, text, context)
+    .finally(() => {
+      delete sessions[sessionId];
+    })
+    .subscribeOnError(err => logger.error('Failed to run wit.ai:', err));
 });
