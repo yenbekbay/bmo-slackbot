@@ -4,7 +4,8 @@
     "script": "src/index.js",
     "env": {
       "SLACK_TOKEN": "<your-token-here>",
-      "WIT_TOKEN": "<your-token-here>"
+      "WIT_TOKEN": "<your-token-here>",
+      "REDIS_URL": "<your-redis-url>"
     }
   }]
 }

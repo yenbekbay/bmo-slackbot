@@ -26,6 +26,7 @@
     "colors": "^1.1.2",
     "nearest-neighbor": "0.0.3",
     "node-wit": "^3.2.0",
+    "redis": "^2.6.0-1",
     "request": "^2.72.0",
     "rx-lite": "^4.0.8",
     "winston": "^2.2.0",

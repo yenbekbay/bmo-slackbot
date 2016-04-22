@@ -5,6 +5,7 @@ const Rx = require('rx-lite');
 const Wit = require('node-wit').Wit;
 const yargsParser = require('yargs-parser');
 
+const Brain = require('./brain');
 const levels = require('./logger').logLevels;
 const LibraryEngine = require('./library-engine');
 const Logger = require('./logger').Logger;
@@ -12,10 +13,12 @@ const Speaker = require('./speaker');
 
 const slackToken = process.env.SLACK_TOKEN;
 const witToken = process.env.WIT_TOKEN;
+const redisUrl = process.env.REDIS_URL;
 const logLevel = process.env.NODE_ENV === 'production'
   ? levels.LOG
   : levels.DEBUG;
 
+const brain = new Brain(redisUrl);
 const controller = Botkit.slackbot({ debug: false });
 const libraryEngine = new LibraryEngine();
 const globalLogger = new Logger(logLevel);
