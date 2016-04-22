@@ -14,7 +14,7 @@ class ScoreKeeper {
     if (channel) {
       return this.brain.setLastVotedUser(channel, username)
         .flatMap(lastVotedUser => {
-          this.brain.incrementUserScore(username, points);
+          return this.brain.incrementUserScore(username, points);
         });
     }
 
