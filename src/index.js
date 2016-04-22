@@ -29,7 +29,6 @@ const bot = controller
 
     globalLogger.log('Connected to Slack');
   });
-const speaker = Speaker(bot, logger);
 
 function findOrCreateSession(message) {
   let sessionId;
@@ -77,6 +76,7 @@ function formattedPlatform(platform) {
     );
   }
 }
+const speaker = new Speaker(bot, globalLogger);
 
 controller.hears(
   '^(ios|android)\\slib(?:rarie)?s\\slist$',
