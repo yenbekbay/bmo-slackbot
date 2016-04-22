@@ -29,53 +29,6 @@ const bot = controller
 
     globalLogger.log('Connected to Slack');
   });
-
-function findOrCreateSession(message) {
-  let sessionId;
-  Object.keys(sessions).forEach(k => {
-    if (
-      sessions[k].channel === message.channel &&
-      sessions[k].user === message.user
-    ) {
-      sessionId = k;
-    }
-  });
-  if (!sessionId) {
-    sessionId = new Date().toISOString();
-    sessions[sessionId] = {
-      channel: message.channel,
-      user: message.user,
-      context: {}
-    };
-  }
-
-  return sessionId;
-}
-
-function firstEntityValue(entities, entity) {
-  const val = entities && entities[entity] &&
-    Array.isArray(entities[entity]) &&
-    entities[entity].length > 0 &&
-    entities[entity][0].value;
-  if (!val) {
-    return null;
-  }
-
-  return typeof val === 'object' ? val.value : val;
-}
-
-function formattedPlatform(platform) {
-  if (platform.toLowerCase() === 'ios') {
-    return 'iOS';
-  } else if (platform.toLowerCase() === 'android') {
-    return 'Android';
-  } else {
-    return platform.replace(
-      /\w\S*/g,
-      str => str.charAt(0).toUpperCase() + str.substr(1).toLowerCase()
-    );
-  }
-}
 const speaker = new Speaker(bot, globalLogger);
 
 controller.hears(
@@ -87,7 +40,7 @@ controller.hears(
     libraryEngine.getCategories(platform)
       .flatMap(categoriesTree => {
         const pretext = 'Library categories for ' +
-          formattedPlatform(platform) + ':';
+          LibraryEngine.formattedPlatform(platform) + ':';
         return speaker.sayMessage(channel, {
           text: pretext + '\n```\n' + categoriesTree + '\n```',
           mrkdwn: true
@@ -103,9 +56,7 @@ controller.hears(
     const channel = message.channel;
     const platform = message.match[1].toLowerCase();
     const queryArgs = yargsParser(message.match[2]);
-    const query = queryArgs._.join(' ') +
-      queryArgs.swift ? ' (Swift only)' : '';
-    console.log('platform:', platform, ', query:', query);
+    const query = queryArgs._.join(' ');
 
     libraryEngine.getLibrariesForQuery(platform, query)
       .flatMap(libraries => {
@@ -117,8 +68,9 @@ controller.hears(
             libraries = libraries.filter(library => library.swift);
           }
           message.text = 'These are some ' +
-            formattedPlatform(platform) + ' libraries I found for ' +
-            query + ':';
+            LibraryEngine.formattedPlatform(platform) +
+            ' libraries I found for ' + query +
+            (queryArgs.swift ? ' (Swift only)' : '') + ':';
           message.attachments = libraries.map(library => {
             return {
               fallback: library.title,
@@ -159,6 +111,28 @@ controller.on('user_channel_join', (bot, message) => {
       }
     }, err => globalLogger.error('Failed to greet a newcomer:', err));
 });
+
+function findOrCreateSession(message) {
+  let sessionId;
+  Object.keys(sessions).forEach(k => {
+    if (
+      sessions[k].channel === message.channel &&
+      sessions[k].user === message.user
+    ) {
+      sessionId = k;
+    }
+  });
+  if (!sessionId) {
+    sessionId = new Date().toISOString();
+    sessions[sessionId] = {
+      channel: message.channel,
+      user: message.user,
+      context: {}
+    };
+  }
+
+  return sessionId;
+}
 
 const witLogger = new Logger(logLevel, ['witai']);
 const actions = {

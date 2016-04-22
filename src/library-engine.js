@@ -85,6 +85,19 @@ class LibraryEngine {
       });
   }
 
+  static formattedPlatform(platform) {
+    if (platform.toLowerCase() === 'ios') {
+      return 'iOS';
+    } else if (platform.toLowerCase() === 'android') {
+      return 'Android';
+    } else {
+      return platform.replace(
+        /\w\S*/g,
+        str => str.charAt(0).toUpperCase() + str.substr(1).toLowerCase()
+      );
+    }
+  }
+
   static _categoriesTree(categories) {
     return categories
       .reduce((categories, category) => {
