@@ -87,6 +87,23 @@ controller.hears(
       .subscribe();
   });
 
+controller.hears(
+  '^(?:hi|hello|whatsup|howdy|greetings|privet|salem)(?:\\s.*)?$',
+  ['direct_message', 'direct_mention'], (bot, message) => {
+    Rx.Observable
+      .fromNodeCallback(bot.api.users.info)({ user: message.user })
+      .flatMap(response => {
+        if (!response.user || !response.user.name) {
+          return Rx.Observable.empty();
+        }
+
+        return speaker.greet(response.user.name, message.channel);
+      })
+      .subscribeOnError(err => {
+        globalLogger.error('Failed to greet a user:', err);
+      });
+  });
+
 controller.on('user_channel_join', (bot, message) => {
   Rx.Observable
     .fromNodeCallback(bot.api.channels.info)({ channel: message.channel })
@@ -96,20 +113,28 @@ controller.on('user_channel_join', (bot, message) => {
       }
 
       return Rx.Observable
-        .fromNodeCallback(bot.api.users.info)({ user: message.user });
+        .fromNodeCallback(bot.api.users.info)({ user: message.user })
+        .flatMap(response => {
+          if (!response.user || !response.user.name) {
+            return Rx.Observable.empty();
+          }
+
+          const questions = [
+            'Как тебя зовут?',
+            'Чем ты занимаешься и/или на каких языках программирования ты ' +
+              'пишешь?',
+            'Ссылки на твой блог и/или профиль в Гитхабе'
+          ].map(question => '- ' + question).join('\n');
+          return speaker.sayMessage(
+            message.channel,
+            'Добро пожаловать, @' + response.user.name + '! ' +
+              'Не мог бы ты вкратце рассказать о себе?\n' + questions
+          );
+        });
     })
-    .subscribe(response => {
-      if (response.user && response.user.name) {
-        const questions = [
-          'Как тебя зовут?',
-          'Чем ты занимаешься и/или на каких языках программирования ты ' +
-            'пишешь?',
-          'Ссылки на твой блог и/или профиль в Гитхабе'
-        ].map(question => '- ' + question).join('\n');
-        bot.reply(message, 'Добро пожаловать, @' + response.user.name + '! ' +
-          'Не мог бы ты вкратце рассказать о себе?\n' + questions);
-      }
-    }, err => globalLogger.error('Failed to greet a newcomer:', err));
+    .subscribeOnError(err => {
+      globalLogger.error('Failed to greet a newcomer:', err);
+    });
 });
 
 function findOrCreateSession(message) {

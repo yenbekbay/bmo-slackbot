@@ -16,11 +16,10 @@ class Speaker {
     this.logger = logger;
   }
 
-  greet(channel) {
-    return this.sayMessage(
-      channel,
-      greetings[Math.floor(Math.random() * greetings.length)]
-    );
+  greet(username, channel) {
+    const greeting = '@' + username + ': ' +
+      greetings[Math.floor(Math.random() * greetings.length)];
+    return this.sayMessage(channel, greeting);
   }
 
   sayError(channel, err) {
