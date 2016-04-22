@@ -176,6 +176,10 @@ const actions = {
           text: 'Unfortunately, no libraries were found for this category.'
         };
         if (libraries && libraries.length > 0) {
+          let query = context.query.replace(
+            /\w\S*/g,
+            str => str.charAt(0).toUpperCase() + str.substr(1).toLowerCase()
+          );
           if (context.flags) {
             const flags = context.flags
               .trim()
@@ -183,9 +187,12 @@ const actions = {
               .map(flag => flag.replace('--', '').trim());
             if (flags && flags.indexOf('swift') > -1) {
               libraries = libraries.filter(library => library.swift);
+              query += ' (Swift only)';
             }
           }
-          message.text = 'Here\'s what I found:';
+          message.text = 'These are some ' +
+            formattedPlatform(context.platform) + ' libraries I found for ' +
+            query + ':';
           message.attachments = libraries.map(library => {
             return {
               fallback: library.title,
