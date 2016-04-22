@@ -10,6 +10,7 @@ const levels = require('./logger').logLevels;
 const LibraryEngine = require('./library-engine');
 const Logger = require('./logger').Logger;
 const Speaker = require('./speaker');
+const ScoreKeeper = require('./score-keeper');
 
 const slackToken = process.env.SLACK_TOKEN;
 const witToken = process.env.WIT_TOKEN;
@@ -20,8 +21,9 @@ const logLevel = process.env.NODE_ENV === 'production'
 
 const brain = new Brain(redisUrl);
 const controller = Botkit.slackbot({ debug: false });
-const libraryEngine = new LibraryEngine();
 const globalLogger = new Logger(logLevel);
+const libraryEngine = new LibraryEngine();
+const scoreKeeper = new ScoreKeeper(brain);
 
 const bot = controller
   .spawn({ token: slackToken })
@@ -102,38 +104,181 @@ controller.hears(
 
         return speaker.greet(response.user.name, message.channel);
       })
-      .subscribeOnError(err => {
-        globalLogger.error('Failed to greet a user:', err);
-      });
+      .catch(err => speaker.sayError(message.channel, err))
+      .subscribe();
+  });
+
+function getChannel(channel) {
+  return Rx.Observable
+    .fromNodeCallback(bot.api.channels.info)({ channel: channel })
+    .map(response => response.channel
+      ? response.channel.name
+      : response.channel
+    );
+}
+
+function getUsername(user) {
+  return Rx.Observable
+    .fromNodeCallback(bot.api.users.info)({ user: user })
+    .map(response => response.user ? response.user.name : response.user);
+}
+
+controller.hears(
+  '^\\s*<@(U.+)>\\s*:?\\s*([-+]{2})\\s*$',
+  ['direct_message'], (bot, message) => {
+    const user = message.match[1];
+    const operator = message.match[2];
+
+    Rx.Observable
+      .zip(
+        getUsername(message.user),
+        getUsername(user),
+        (currentUser, votedUser) => {
+          return { currentUser: currentUser, votedUser: votedUser };
+        }
+      )
+      .map(result => ScoreKeeper.parseVote(
+        result.currentUser,
+        result.votedUser,
+        operator
+      ))
+      .flatMap(result => speaker
+        .sayMessage(message.channel, result.message)
+        .flatMap(response => scoreKeeper.updateScore(
+          message.channel,
+          result.user,
+          result.points
+        ))
+      )
+      .catch(err => speaker.sayError(message.channel, err))
+      .subscribe();
+  });
+
+controller.hears(
+  '^\\s*@?([\\w\\.\\-]*)\\s*:?\\s*([-+]{2})\\s*$',
+  ['direct_message'], (bot, message) => {
+    const username = message.match[1];
+    const operator = message.match[2];
+
+    Rx.Observable
+      .zip(
+        getUsername(message.user),
+        !username
+          ? brain.getLastVotedUser(message.channel)
+          : Rx.Observable.return(username),
+        (currentUser, votedUser) => {
+          return { currentUser: currentUser, votedUser: votedUser };
+        }
+      )
+      .map(result => ScoreKeeper.parseVote(
+        result.currentUser,
+        result.votedUser,
+        operator
+      ))
+      .flatMap(result => speaker
+        .sayMessage(message.channel, result.message)
+        .flatMap(response => scoreKeeper.updateScore(
+          message.channel,
+          result.user,
+          result.points
+        ))
+      )
+      .catch(err => speaker.sayError(message.channel, err))
+      .subscribe();
+  });
+
+controller.on('reaction_added', (bot, message) => {
+  const currentUser = message.user;
+  const votedUser = message.item_user;
+  const reaction = message.reaction;
+
+  Rx.Observable
+    .zip(
+      getUsername(currentUser),
+      getUsername(votedUser),
+      (currentUser, votedUser) => {
+        return { currentUser: currentUser, votedUser: votedUser };
+      }
+    )
+    .map(result => ScoreKeeper.parseVote(
+      result.currentUser,
+      result.votedUser,
+      reaction
+    ))
+    .flatMap(result => speaker
+      .sayMessage(message.item.channel, result.message)
+      .flatMap(response => scoreKeeper.updateScore(
+        message.channel,
+        result.user,
+        result.points
+      ))
+    )
+    .catch(err => speaker.sayError(message.channel, err))
+    .subscribe();
+});
+
+controller.hears(
+  '^\\s?score\\s?$',
+  ['direct_message', 'direct_mention'], (bot, message) => {
+    getUsername(message.user)
+      .flatMap(username => brain.getUserScore(username)
+        .flatMap(score => speaker.sayMessage(
+          message.channel,
+          '@' + username + '\': your score is: ' + score
+        ))
+      )
+      .catch(err => speaker.sayError(message.channel, err))
+      .subscribe();
+  });
+
+controller.hears(
+  '^\\s?leaderboard\\s?$',
+  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
+    scoreKeeper.getUserScores()
+      .flatMap(scores => speaker.sayMessage(message.channel, scores))
+      .catch(err => speaker.sayError(message.channel, err))
+      .subscribe();
+  });
+
+controller.hears(
+  '^\\s?score\\s(?:for\\s)?@?(.*)\\s?$',
+  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
+    const username = message.match[1];
+
+    brain.getUserScore(username)
+      .flatMap(score => speaker.sayMessage(
+        message.channel,
+        '@' + username + '\'s score is: ' + score
+      ))
+      .catch(err => speaker.sayError(message.channel, err))
+      .subscribe();
   });
 
 controller.on('user_channel_join', (bot, message) => {
   Rx.Observable
-    .fromNodeCallback(bot.api.channels.info)({ channel: message.channel })
-    .flatMap(response => {
-      if (!response.channel || response.channel.name !== 'intro') {
+    .zip(
+      getChannel(message.channel),
+      getUsername(message.user),
+      (channel, user) => {
+        return { channel: channel, user: user };
+      }
+    )
+    .flatMap(result => {
+      if (result.channel !== 'intro' || !result.user) {
         return Rx.Observable.empty();
       }
 
-      return Rx.Observable
-        .fromNodeCallback(bot.api.users.info)({ user: message.user })
-        .flatMap(response => {
-          if (!response.user || !response.user.name) {
-            return Rx.Observable.empty();
-          }
-
-          const questions = [
-            'Как тебя зовут?',
-            'Чем ты занимаешься и/или на каких языках программирования ты ' +
-              'пишешь?',
-            'Ссылки на твой блог и/или профиль в Гитхабе'
-          ].map(question => '- ' + question).join('\n');
-          return speaker.sayMessage(
-            message.channel,
-            'Добро пожаловать, @' + response.user.name + '! ' +
-              'Не мог бы ты вкратце рассказать о себе?\n' + questions
-          );
-        });
+      const questions = [
+        'Как тебя зовут?',
+        'Чем ты занимаешься и/или на каких языках программирования ты ' +
+          'пишешь?',
+        'Ссылки на твой блог и/или профиль в Гитхабе'
+      ].map(question => '- ' + question).join('\n');
+      return speaker.sayMessage(
+        message.channel,
+        'Добро пожаловать, @' + result.user + '! ' +
+          'Не мог бы ты вкратце рассказать о себе?\n' + questions
+      );
     })
     .subscribeOnError(err => {
       globalLogger.error('Failed to greet a newcomer:', err);
