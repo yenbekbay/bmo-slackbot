@@ -18,24 +18,30 @@ class AwesomeListBaseScraper {
       .requestWithUrl(this._url)
       .flatMap(body => {
         const $ = cheerio.load(body);
-        const categoriesListNode = $(self._categoriesListSelector).next('ul');
 
         return self.constructor
-          ._findCategory(
-            query,
-            self.constructor._categoriesForList($, categoriesListNode)
-          )
-          .map(category => {
-            if (!category) {
-              return [];
-            }
-
-            const librariesListNode = $('#user-content-' + category.slug)
-              .parent().nextAll('ul').first();
-
-            return self.constructor._librariesForList($, librariesListNode);
-          });
+          ._findCategory(query, self._parseCategories($))
+          .map(category => !category ? [] : self._parseLibraries($, category));
       });
+  }
+
+  getCategories() {
+    const self = this;
+
+    return this.provider
+      .requestWithUrl(this._url)
+      .map(body => self._parseCategories(cheerio.load(body)));
+  }
+
+  _parseCategories($) {
+    const categoriesListNode = $(this._categoriesListSelector).next('ul');
+    return this.constructor._categoriesForList($, categoriesListNode);
+  }
+
+  _parseLibraries($, category) {
+    const librariesListNode = $('#user-content-' + category.slug).parent()
+      .nextAll('ul').first();
+    return this.constructor._librariesForList($, librariesListNode);
   }
 
   static _categoriesForList($, listNode) {
