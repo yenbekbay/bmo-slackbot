@@ -10,9 +10,9 @@ const LEVELS = {
 };
 
 class Logger {
-  constructor(level) {
+  constructor(level, tags) {
     this.level = (level === undefined || level === null) ? LEVELS.LOG : level;
-    this.tags = [];
+    this.tags = tags || [];
   }
 
   error(message) {

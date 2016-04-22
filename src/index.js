@@ -12,11 +12,13 @@ const Speaker = require('./speaker');
 
 const slackToken = process.env.SLACK_TOKEN;
 const witToken = process.env.WIT_TOKEN;
-const env = process.env.NODE_ENV;
+const logLevel = process.env.NODE_ENV === 'production'
+  ? levels.LOG
+  : levels.DEBUG;
 
 const controller = Botkit.slackbot({ debug: false });
-const logger = new Logger(env === 'production' ? levels.LOG : levels.DEBUG);
 const libraryEngine = new LibraryEngine();
+const globalLogger = new Logger(logLevel);
 
 const bot = controller
   .spawn({ token: slackToken })
@@ -25,7 +27,7 @@ const bot = controller
       throw new Error('Error connecting to Slack: ' + err);
     }
 
-    logger.log('Connected to Slack');
+    globalLogger.log('Connected to Slack');
   });
 const speaker = Speaker(bot, logger);
 
@@ -155,9 +157,10 @@ controller.on('user_channel_join', (bot, message) => {
         bot.reply(message, 'Добро пожаловать, @' + response.user.name + '! ' +
           'Не мог бы ты вкратце рассказать о себе?\n' + questions);
       }
-    }, err => logger.error('Failed to greet a newcomer:', err));
+    }, err => globalLogger.error('Failed to greet a newcomer:', err));
 });
 
+const witLogger = new Logger(logLevel, ['witai']);
 const actions = {
   say(sessionId, context, message, cb) {
     const session = sessions[sessionId] || {};
@@ -167,12 +170,13 @@ const actions = {
     cb(context);
   },
   error(sessionId, context, err) {
-    logger.error(err);
+    witLogger.error(err);
 
     const session = sessions[sessionId] || {};
     speaker.sayError(session.channel, err);
   }
 };
+const wit = new Wit(witToken, actions, witLogger);
 
 // This will contain all user sessions
 // Each session has an entry:
@@ -182,8 +186,6 @@ const actions = {
 //   context: sessionState
 // }
 let sessions = {};
-
-const wit = new Wit(witToken, actions, logger);
 
 controller.hears('.*', ['direct_message', 'direct_mention'], (bot, message) => {
   const sessionId = findOrCreateSession(message);
@@ -195,5 +197,5 @@ controller.hears('.*', ['direct_message', 'direct_mention'], (bot, message) => {
     .finally(() => {
       delete sessions[sessionId];
     })
-    .subscribeOnError(err => logger.error('Failed to run wit.ai:', err));
+    .subscribeOnError(err => witLogger.error('Failed to run actions:', err));
 });
