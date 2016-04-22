@@ -343,7 +343,7 @@ const actions = {
     witLogger.error(err);
 
     const session = sessions[sessionId] || {};
-    speaker.sayError(session.channel, err);
+    speaker.sayError(session.channel, err).subscribe();
   }
 };
 const wit = new Wit(witToken, actions, witLogger);
