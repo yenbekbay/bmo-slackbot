@@ -1,0 +1,10 @@
+{
+  "apps": [{
+    "name": "bmo-slackbot",
+    "script": "src/index.js",
+    "env": {
+      "SLACK_TOKEN": "<your-token-here>",
+      "WIT_TOKEN": "<your-token-here>"
+    }
+  }]
+}
