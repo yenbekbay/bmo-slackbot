@@ -262,6 +262,22 @@ controller.hears(
       .subscribe();
   });
 
+controller.hears(
+  '^\\s*score\\s+(?:for\\s+)?<@(U.+)>\\s*$',
+  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
+    const user = message.match[1];
+
+    getUsername(user)
+      .flatMap(username => brain.getUserScore(username)
+        .flatMap(score => speaker.sayMessage(
+          message.channel,
+          `@${username}'s score is: ${score}`
+        ))
+      )
+      .catch(err => speaker.sayError(message.channel, err))
+      .subscribe();
+  });
+
 controller.on('user_channel_join', (bot, message) => {
   Rx.Observable
     .zip(
