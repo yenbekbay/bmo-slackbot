@@ -26,7 +26,7 @@ class ScoreKeeper {
       .map(scores => Object.keys(scores)
         .map(username => {
           return {
-            username: '@' + username,
+            username: `@${username}`,
             score: parseInt(scores[username], 10)
           };
         })
@@ -47,11 +47,11 @@ class ScoreKeeper {
         }
         scores = scores.slice(0, Math.min(10, scores.length));
 
-        scores[0].username = '👑 ' + scores[0].username;
-        return clark(scores.map(score => score.score)) + '\n' +
+        scores[0].username = `👑 ${scores[0].username}`;
+        return `${clark(scores.map(score => score.score))}\n` +
           scores.map((score, idx) => {
-            return (idx + 1) + '. ' + score.username + ': ' + score.score +
-              ' point' + (score.score > 1 ? 's' : '');
+            return `${idx + 1}. ${score.username}: ${score.score} ` +
+              `point${score.score > 1 ? 's' : ''}`;
           }).join('\n');
       });
   }
@@ -70,7 +70,7 @@ class ScoreKeeper {
     if (currentUser === votedUser) {
       return {
         user: votedUser,
-        message: '@' + currentUser + ': No cheating 😏',
+        message: `@${currentUser}: No cheating 😏`,
         points: 0
       };
     }
@@ -85,13 +85,13 @@ class ScoreKeeper {
       case '++':
         return {
           user: votedUser,
-          message: 'Upvoted @' + votedUser + ' 😃',
+          message: `Upvoted @${votedUser} 😃`,
           points: 1
         };
       case '--':
         return {
           user: votedUser,
-          message: 'Downvoted @' + votedUser + ' 😔',
+          message: `Downvoted @${votedUser} 😔`,
           points: -1
         };
     }

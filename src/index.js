@@ -29,7 +29,7 @@ const bot = controller
   .spawn({ token: slackToken })
   .startRTM((err, bot, payload) => {
     if (err) {
-      throw new Error('Error connecting to Slack: ' + err);
+      throw new Error(`Error connecting to Slack: ${err}`);
     }
 
     globalLogger.log('Connected to Slack');
@@ -45,9 +45,9 @@ controller.hears(
     libraryEngine.getCategories(platform)
       .flatMap(categoriesTree => {
         const pretext = 'Library categories for ' +
-          LibraryEngine.formattedPlatform(platform) + ':';
+          `${LibraryEngine.formattedPlatform(platform)}:`;
         return speaker.sayMessage(channel, {
-          text: pretext + '\n```\n' + categoriesTree + '\n```',
+          text: `${pretext}\n\`\`\`\n${categoriesTree}\n\`\`\``,
           mrkdwn: true
         });
       })
@@ -74,8 +74,8 @@ controller.hears(
           }
           message.text = 'These are some ' +
             LibraryEngine.formattedPlatform(platform) +
-            ' libraries I found for ' + query +
-            (queryArgs.swift ? ' (Swift only)' : '') + ':';
+            ` libraries I found for "${query}"` +
+            `${queryArgs.swift ? ' (Swift only)' : ''}:`;
           message.attachments = libraries.map(library => {
             return {
               fallback: library.title,
@@ -224,7 +224,7 @@ controller.hears(
       .flatMap(username => brain.getUserScore(username)
         .flatMap(score => speaker.sayMessage(
           message.channel,
-          '@' + username + '\': your score is: ' + score
+          `@${username}: your score is: ${score}`
         ))
       )
       .catch(err => speaker.sayError(message.channel, err))
@@ -256,7 +256,7 @@ controller.hears(
     brain.getUserScore(username)
       .flatMap(score => speaker.sayMessage(
         message.channel,
-        '@' + username + '\'s score is: ' + score
+        `@${username}'s score is: ${score}`
       ))
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
@@ -278,14 +278,13 @@ controller.on('user_channel_join', (bot, message) => {
 
       const questions = [
         'Как тебя зовут?',
-        'Чем ты занимаешься и/или на каких языках программирования ты ' +
-          'пишешь?',
+        'Чем ты занимаешься и/или на каких языках программирования ты пишешь?',
         'Ссылки на твой блог и/или профиль в Гитхабе'
-      ].map(question => '- ' + question).join('\n');
+      ].map(question => `- ${question}`).join('\n');
       return speaker.sayMessage(
         message.channel,
-        'Добро пожаловать, @' + result.user + '! ' +
-          'Не мог бы ты вкратце рассказать о себе?\n' + questions
+        `Добро пожаловать, @${result.user}! Не мог бы ты вкратце рассказать ` +
+          `о себе?\n${questions}`
       );
     })
     .subscribeOnError(err => {

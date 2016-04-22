@@ -26,7 +26,7 @@ class Speaker {
   }
 
   greet(username, channel) {
-    const greeting = '@' + username + ': ' +
+    const greeting = `@${username}: ` +
       greetings[Math.floor(Math.random() * greetings.length)];
     return this.sayMessage(channel, greeting);
   }
@@ -48,16 +48,15 @@ class Speaker {
         text: 'Something went wrong. Please try again or contact @yenbekbay',
         channel: channel
       })
-      .doOnError(err => this.logger.error(
-        'Failed to forward the response to channel ' + channel + ':' + err)
+      .doOnError(err => this.logger
+        .error(`Failed to forward the response to channel ${channel}: ${err}`)
       );
   }
 
   sayMessage(channel, message) {
     let messageObject = {};
     if (!message || !channel) {
-      messageObject.text = 'Something went wrong. Please try again or ' +
-        'contact @yenbekbay';
+      return this.sayError(channel);
     } else if (typeof message === 'object') {
       messageObject = message;
     } else {
@@ -67,8 +66,8 @@ class Speaker {
 
     return Rx.Observable
       .fromNodeCallback(this.bot.say)(messageObject)
-      .doOnError(err => this.logger.error(
-        'Failed to forward the response to channel ' + channel + ':' + err)
+      .doOnError(err => this.logger
+        .error(`Failed to forward the response to channel ${channel}: ${err}`)
       );
   }
 }

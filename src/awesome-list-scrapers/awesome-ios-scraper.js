@@ -21,7 +21,7 @@ class AwesomeIosScraper extends AwesomeListBaseScraper {
     return {
       link: anchorNode.attr('href'),
       title: title + (swift ? ' 🔶' : ''),
-      description: $(libraryNode).text().replace(title + ' - ', '').trim(),
+      description: $(libraryNode).text().replace(`${title} - `, '').trim(),
       swift: swift
     };
   }

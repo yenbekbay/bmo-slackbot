@@ -45,7 +45,7 @@ class Logger {
     }
 
     if (this.winston && this.tags.length > 0) {
-      message = '[' + this.tags.join(',') + '] ' + message;
+      message = `[${this.tags.join(',')}] ${message}`;
     }
 
     switch (level) {

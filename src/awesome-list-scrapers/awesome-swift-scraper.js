@@ -15,8 +15,8 @@ class AwesomeSwiftScraper extends AwesomeListBaseScraper {
     const title = anchorNode.text();
     return {
       link: anchorNode.attr('href'),
-      title: title + ' 🔶',
-      description: $(libraryNode).text().replace(title + ' - ', '').trim(),
+      title: `${title} 🔶`,
+      description: $(libraryNode).text().replace(`${title} - `, '').trim(),
       swift: true
     };
   }

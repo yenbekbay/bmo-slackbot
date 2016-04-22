@@ -39,7 +39,7 @@ class AwesomeListBaseScraper {
   }
 
   _parseLibraries($, category) {
-    const librariesListNode = $('#user-content-' + category.slug).parent()
+    const librariesListNode = $(`#user-content-${category.slug}`).parent()
       .nextAll('ul').first();
     return this.constructor._librariesForList($, librariesListNode);
   }
@@ -102,7 +102,7 @@ class AwesomeListBaseScraper {
     return {
       link: anchorNode.attr('href'),
       title: title,
-      description: $(libraryNode).text().replace(title + ' - ', '').trim()
+      description: $(libraryNode).text().replace(`${title} - `, '').trim()
     };
   }
 }
