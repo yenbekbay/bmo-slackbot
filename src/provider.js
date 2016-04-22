@@ -9,6 +9,7 @@ class Provider {
       headers: { 'User-Agent': 'bmo-slackbot' },
       gzip: true
     });
+    this.loadRetryDelay = 1000;
   }
 
   requestWithUrl(url) {
