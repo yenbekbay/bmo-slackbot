@@ -196,18 +196,28 @@ controller.hears('.*', 'direct_message,direct_mention', (bot, message) => {
 });
 
 controller.on('user_channel_join', (bot, message) => {
-  bot.api.users.info({ user: message.user }, (err, response) => {
+  bot.api.channels.info({ channel: message.channel }, (err, response) => {
     if (err) {
-      return logger.error('Failed to get user information:', err);
+      return logger.error('Failed to get channel information:', err);
     }
-    if (response.user && response.user.name) {
-      const questions = [
-        'Как тебя зовут?',
-        'Чем ты занимаешься и/или на каких языках программирования ты пишешь?',
-        'Ссылки на твой блог и/или профиль в Гитхабе'
-      ].map(question => '- ' + question).join('\n');
-      bot.reply(message, 'Добро пожаловать, @' + response.user.name + '! ' +
-        'Не мог бы ты вкратце рассказать о себе?\n' + questions);
+    if (!response.channel || response.channel.name !== 'intro') {
+      return;
     }
+
+    bot.api.users.info({ user: message.user }, (err, response) => {
+      if (err) {
+        return logger.error('Failed to get user information:', err);
+      }
+      if (response.user && response.user.name) {
+        const questions = [
+          'Как тебя зовут?',
+          'Чем ты занимаешься и/или на каких языках программирования ты ' +
+            'пишешь?',
+          'Ссылки на твой блог и/или профиль в Гитхабе'
+        ].map(question => '- ' + question).join('\n');
+        bot.reply(message, 'Добро пожаловать, @' + response.user.name + '! ' +
+          'Не мог бы ты вкратце рассказать о себе?\n' + questions);
+      }
+    });
   });
 });
