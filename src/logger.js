@@ -53,21 +53,21 @@ class Logger {
         if (this.winston) {
           this.winston.error(message);
         } else {
-          console.error(colors.red('[Error: %s]'), message);
+          console.error(colors.red('[error] %s'), message);
         }
         break;
       case 'warn':
         if (this.winston) {
           this.winston.warn(message);
         } else {
-          console.error(colors.yellow('[Warning: %s]'), message);
+          console.error(colors.yellow('[warn] %s'), message);
         }
         break;
       case 'debug':
         if (this.winston) {
           this.winston.debug(message);
         } else {
-          console.log(colors.cyan('[Debug: %s]'), message);
+          console.log(colors.cyan('[debug] %s'), message);
         }
         break;
       default:

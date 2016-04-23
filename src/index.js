@@ -55,6 +55,9 @@ controller.hears(
           mrkdwn: true
         });
       })
+      .doOnError(err => globalLogger
+        .error(`Failed to execute the libraries list command: ${err}`)
+      )
       .catch(err => speaker.sayError(channel, err))
       .subscribe();
   });
@@ -92,6 +95,9 @@ controller.hears(
 
         return speaker.sayMessage(channel, message);
       })
+      .doOnError(err => globalLogger
+        .error(`Failed to execute the libraries search command: ${err}`)
+      )
       .catch(err => speaker.sayError(channel, err))
       .subscribe();
   });
@@ -139,6 +145,9 @@ controller.hears(
 
         return speaker.sayMessage(channel, message);
       })
+      .doOnError(err => globalLogger
+        .error(`Failed to execute the trending repos command: ${err}`)
+      )
       .catch(err => speaker.sayError(channel, err))
       .subscribe();
   });
@@ -155,6 +164,9 @@ controller.hears(
 
         return speaker.greet(response.user.name, message.channel);
       })
+      .doOnError(err => globalLogger
+        .error(`Failed to greet the user: ${err}`)
+      )
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });
@@ -201,6 +213,9 @@ controller.hears(
           result.points
         ))
       )
+      .doOnError(err => globalLogger
+        .error(`Failed to execute the karma command: ${err}`)
+      )
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });
@@ -234,6 +249,9 @@ controller.hears(
           result.points
         ))
       )
+      .doOnError(err => globalLogger
+        .error(`Failed to execute the karma command: ${err}`)
+      )
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });
@@ -264,6 +282,9 @@ controller.on('reaction_added', (bot, message) => {
         result.points
       ))
     )
+    .doOnError(err => globalLogger
+      .error(`Failed to execute the karma command: ${err}`)
+    )
     .catch(err => speaker.sayError(message.channel, err))
     .subscribe();
 });
@@ -278,6 +299,9 @@ controller.hears(
           `@${username}: your score is: ${score}`
         ))
       )
+      .doOnError(err => globalLogger
+        .error(`Failed to execute the score command: ${err}`)
+      )
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });
@@ -290,6 +314,9 @@ controller.hears(
         text: scores,
         mrkdwn: true
       }))
+      .doOnError(err => globalLogger
+        .error(`Failed to execute the leaderboard command: ${err}`)
+      )
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });
@@ -298,6 +325,9 @@ controller.hears(
   '^\\s*what\\s+time(\\s+is\\s+it)?\\s*\\??\\s*$',
   ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
     speaker.adventureTime(message.channel)
+      .doOnError(err => globalLogger
+        .error(`Failed to execute the Adventure Time command: ${err}`)
+      )
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });
@@ -312,6 +342,9 @@ controller.hears(
         message.channel,
         `@${username}'s score is: ${score}`
       ))
+      .doOnError(err => globalLogger
+        .error(`Failed to execute the score command: ${err}`)
+      )
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });
@@ -327,6 +360,9 @@ controller.hears(
           message.channel,
           `@${username}'s score is: ${score}`
         ))
+      )
+      .doOnError(err => globalLogger
+        .error(`Failed to execute the score command: ${err}`)
       )
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
