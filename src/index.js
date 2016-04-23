@@ -235,7 +235,10 @@ controller.hears(
   '^\\s*leaderboard\\s*$',
   ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
     scoreKeeper.getUserScores()
-      .flatMap(scores => speaker.sayMessage(message.channel, scores))
+      .flatMap(scores => speaker.sayMessage(message.channel, {
+        text: scores,
+        mrkdwn: true
+      }))
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });

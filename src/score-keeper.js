@@ -27,32 +27,41 @@ class ScoreKeeper {
         .map(username => {
           return {
             username: `@${username}`,
-            score: parseInt(scores[username], 10)
+            points: parseInt(scores[username], 10)
           };
         })
-        .filter(score => score.score > 0)
-        .sort((a, b) => {
-          if (a.score < b.score) {
-            return 1;
-          }
-          if (a.score > b.score) {
-            return -1;
-          }
-          return 0;
-        })
+        .filter(score => score.points > 0)
       )
       .map(scores => {
         if (!scores || scores.length === 0) {
           return 'No scores yet';
         }
-        scores = scores.slice(0, Math.min(10, scores.length));
 
-        scores[0].username = `👑 ${scores[0].username}`;
-        return `${clark(scores.map(score => score.score))}\n` +
-          scores.map((score, idx) => {
-            return `${idx + 1}. ${score.username}: ${score.score} ` +
-              `point${score.score > 1 ? 's' : ''}`;
-          }).join('\n');
+        scores = scores.reduce((scores, score) => {
+          if (scores[score.points]) {
+            scores[score.points] = scores[score.points].concat(score.username);
+          } else {
+            scores[score.points] = [score.username];
+          }
+
+          return scores;
+        }, {});
+
+        let points = Object.keys(scores).sort().reverse();
+        points = points.slice(0, Math.min(10, points.length));
+
+        const table = points
+          .map((points, i) => scores[points]
+            .map((username, j) => {
+              const num = `${i + 1}.`;
+              return `${j === 0 ? num : ' '.repeat(num.length)} ` +
+                `${username}: ${points} point${points > 1 ? 's' : ''}` +
+                (i === 0 ? ' 👑' : '');
+            })
+          )
+          .reduce((a, b) => a.concat(b));
+
+        return `${clark(points)}\n\`\`\`${table.join('\n')}\`\`\``;
       });
   }
 
