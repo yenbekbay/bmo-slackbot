@@ -106,9 +106,12 @@ controller.hears(
   '^\\s*trending(?:\\s+repos)?(?:$|(?:\\s+for)?\\s+(.+)\\s*$)',
   ['direct_message', 'direct_mention'], (bot, message) => {
     const channel = message.channel;
-    const language = message.match[1];
+    let language = message.match[1];
+    if (language) {
+      language = language.toLowerCase();
+    }
 
-    trendingEngine.getTrendingRepos(language.toLowerCase(), 15)
+    trendingEngine.getTrendingRepos(language)
       .flatMap(repos => {
         let message = {
           text: 'I couldn\'t find any trending repos' +
