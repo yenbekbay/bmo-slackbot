@@ -9,12 +9,15 @@ const Brain = require('./brain');
 const levels = require('./logger').logLevels;
 const LibraryEngine = require('./library-engine');
 const Logger = require('./logger').Logger;
-const Speaker = require('./speaker');
 const ScoreKeeper = require('./score-keeper');
+const Speaker = require('./speaker');
+const TrendingEngine = require('./trending-engine');
 
 const slackToken = process.env.SLACK_TOKEN;
 const witToken = process.env.WIT_TOKEN;
 const redisUrl = process.env.REDIS_URL;
+const githubClientId = process.env.GITHUB_CLIENT_ID;
+const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
 const logLevel = process.env.NODE_ENV === 'production'
   ? levels.LOG
   : levels.DEBUG;
@@ -24,6 +27,7 @@ const controller = Botkit.slackbot({ debug: false });
 const globalLogger = new Logger(logLevel);
 const libraryEngine = new LibraryEngine();
 const scoreKeeper = new ScoreKeeper(brain);
+const trendingEngine = new TrendingEngine(githubClientId, githubClientSecret);
 
 const bot = controller
   .spawn({ token: slackToken })
@@ -37,7 +41,7 @@ const bot = controller
 const speaker = new Speaker(bot, globalLogger);
 
 controller.hears(
-  '^(ios|android)\\s+lib(?:rarie)?s\\s+list$',
+  '^(ios|android)\\s+lib(?:rarie)?s\\s+list\\s*$',
   ['direct_message', 'direct_mention'], (bot, message) => {
     const channel = message.channel;
     const platform = message.match[1].toLowerCase();
@@ -56,7 +60,7 @@ controller.hears(
   });
 
 controller.hears(
-  '^(ios|android)\\s+lib(?:rarie)?s(?:\\s+for\\s+|\\s+)(.+)$',
+  '^(ios|android)\\s+lib(?:rarie)?s(?:\\s+for\\s+|\\s+)(.+)\\s*$',
   ['direct_message', 'direct_mention'], (bot, message) => {
     const channel = message.channel;
     const platform = message.match[1].toLowerCase();
@@ -66,7 +70,7 @@ controller.hears(
     libraryEngine.getLibrariesForQuery(platform, query)
       .flatMap(libraries => {
         let message = {
-          text: 'Unfortunately, no libraries were found for this category.'
+          text: 'Unfortunately, no libraries were found for this category'
         };
         if (libraries && libraries.length > 0) {
           if (queryArgs.swift) {
@@ -83,6 +87,53 @@ controller.hears(
               title_link: library.link,
               text: library.description
             };
+          });
+        }
+
+        return speaker.sayMessage(channel, message);
+      })
+      .catch(err => speaker.sayError(channel, err))
+      .subscribe();
+  });
+
+controller.hears(
+  '^\\s*trending(?:\\s+repos)?(?:$|(?:\\s+for)?\\s+(.+)\\s*$)',
+  ['direct_message', 'direct_mention'], (bot, message) => {
+    const channel = message.channel;
+    const language = message.match[1];
+
+    trendingEngine.getTrendingRepos(language.toLowerCase(), 15)
+      .flatMap(repos => {
+        let message = {
+          text: 'I couldn\'t find any trending repos' +
+            (language ? ` for ${language}` : '')
+        };
+        if (repos && repos.length > 0) {
+          message.text = `Trending repos for ${language || 'all languages'}:`;
+          message.attachments = repos.map(repo => {
+            let attachment = {
+              fallback: repo.name,
+              title: repo.name,
+              title_link: repo.link,
+              text: repo.description,
+              fields: []
+            };
+            if (repo.trend) {
+              attachment.fields.push({
+                title: 'Trend',
+                value: `+${repo.trend}`,
+                short: true
+              });
+            }
+            if (repo.language) {
+              attachment.fields.push({
+                title: 'Language',
+                value: repo.language,
+                short: true
+              });
+            }
+
+            return attachment;
           });
         }
 

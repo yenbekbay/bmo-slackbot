@@ -5,7 +5,9 @@
     "env": {
       "SLACK_TOKEN": "<your-token-here>",
       "WIT_TOKEN": "<your-token-here>",
-      "REDIS_URL": "<your-redis-url>"
+      "REDIS_URL": "<your-redis-url>",
+      "GITHUB_CLIENT_ID": "<your-github-client-id>",
+      "GITHUB_CLIENT_SECRET": "<your-github-client-secret>"
     }
   }]
 }
