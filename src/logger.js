@@ -16,32 +16,46 @@ class Logger {
   }
 
   error(message) {
-    if (LEVELS.ERROR >= this.level) {
-      this._log(message, 'error');
-    }
+    this.log(message, 'error');
   }
 
   warn(message) {
-    if (LEVELS.WARN >= this.level) {
-      this._log(message, 'warn');
-    }
+    this.log(message, 'warn');
   }
 
   debug(message) {
-    if (LEVELS.DEBUG >= this.level) {
-      this._log(message, 'debug');
-    }
+    this.log('debug', message);
   }
 
   info(message) {
-    if (LEVELS.INFO >= this.level) {
-      this._log(message, 'info');
-    }
+    this.log('info', message);
   }
 
-  _log(message, level) {
+  log() {
+    const args = Array.prototype.slice.call(arguments);
+    if (args.length === 0) {
+      return;
+    }
+    const level = args[0];
+    let message = args.slice(1).join(' ');
+
     if (!message) {
       return;
+    }
+
+    switch (level) {
+      case 'error':
+        if (LEVELS.ERROR < this.level) return;
+        break;
+      case 'warn':
+        if (LEVELS.WARN < this.level) return;
+        break;
+      case 'debug':
+        if (LEVELS.DEBUG < this.level) return;
+        break;
+      default:
+        if (LEVELS.INFO < this.level) return;
+        break;
     }
 
     if (this.tags.length > 0) {
