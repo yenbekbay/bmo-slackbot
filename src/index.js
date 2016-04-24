@@ -91,11 +91,11 @@ controller.hears(
     const channel = message.channel;
     const platform = message.match[1].toLowerCase();
 
-    getChannel(channel)
-      .doOnNext(channel => globalLogger.info(
-        `Getting list of library categories in channel ${channel}`
+    getUsername(message.user)
+      .doOnNext(username => globalLogger.info(
+        `Getting list of library categories for user ${username}`
       ))
-      .flatMap(channe => libraryEngine.getCategories(platform))
+      .flatMap(username => libraryEngine.getCategories(platform))
       .flatMap(categoriesTree => {
         const formattedPlatform = LibraryEngine.formattedPlatform(platform);
         const pretext = `Library categories for ${formattedPlatform}:`;
@@ -117,11 +117,11 @@ controller.hears(
     const queryArgs = yargsParser(message.match[2]);
     const query = queryArgs._.join(' ');
 
-    getChannel(channel)
-      .doOnNext(channel => globalLogger.info(
-        `Getting libraries in channel ${channel}`
+    getUsername(message.user)
+      .doOnNext(username => globalLogger.info(
+        `Getting libraries for user ${username}`
       ))
-      .flatMap(channel => libraryEngine.getLibrariesForQuery(platform, query))
+      .flatMap(username => libraryEngine.getLibrariesForQuery(platform, query))
       .flatMap(libraries => {
         let message = {
           text: 'Unfortunately, no libraries were found for this category'
@@ -159,11 +159,11 @@ controller.hears(
       language = language.toLowerCase();
     }
 
-    getChannel(channel)
-      .doOnNext(channel => globalLogger.info(
-        `Getting trending repos in channel ${channel}`
+    getUsername(message.user)
+      .doOnNext(username => globalLogger.info(
+        `Getting trending repos for user ${username}`
       ))
-      .flatMap(channel => trendingEngine.getTrendingRepos(language))
+      .flatMap(username => trendingEngine.getTrendingRepos(language))
       .flatMap(repos => {
         let message = {
           text: 'I couldn\'t find any trending repos' +
@@ -356,13 +356,11 @@ controller.hears(
 controller.hears(
   '^\\s*what\\s+time(\\s+is\\s+it)?\\s*\\??\\s*$',
   ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
-    const channel = message.channel;
-
-    getChannel(channel)
-      .doOnNext(channel => globalLogger.info(
-        `Sending an Adventure Time GIF to channel ${channel}`
+    getUsername(message.user)
+      .doOnNext(username => globalLogger.info(
+        `Sending an Adventure Time GIF to user ${username}`
       ))
-      .flatMap(channel => speaker.adventureTime(channel))
+      .flatMap(username => speaker.adventureTime(message.channel))
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });
