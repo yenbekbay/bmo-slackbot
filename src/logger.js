@@ -61,7 +61,7 @@ class Logger {
     if (this.tags.length > 0) {
       message = `[${this.tags.join(',')}] ${message}`;
     }
-    message = `${new Date().toISOString()} [${level}] ${message}`;
+    message = `[${level}] ${message}`;
 
     switch (level) {
       case 'error':
