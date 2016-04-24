@@ -15,29 +15,17 @@ const Speaker = require('./speaker');
 const TrendingEngine = require('./trending-engine');
 const WitAi = require('./wit-ai');
 
-const debug = process.env.NODE_ENV === 'production';
+const production = process.env.NODE_ENV === 'production';
 const slackToken = process.env.SLACK_TOKEN;
 const witToken = process.env.WIT_TOKEN;
-const redisPort = debug ? 6379 : process.env.REDIS_PORT;
+const redisPort = production ? process.env.REDIS_PORT : 6379;
 const githubClientId = process.env.GITHUB_CLIENT_ID;
 const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
-const logLevel = debug ? levels.DEBUG : levels.INFO;
+const logLevel = production ? levels.INFO : levels.INFO;
 
-const brain = new Brain(
-  Redis.createClient({ port: redisPort }),
-  new Logger(logLevel, ['redis'])
-);
-const controller = Botkit.slackbot({ debug: debug });
-const globalLogger = new Logger(logLevel);
-const libraryEngine = new LibraryEngine(new Logger(logLevel, ['libraries']));
-const scoreKeeper = new ScoreKeeper(brain);
-const trendingEngine = new TrendingEngine(
-  githubClientId,
-  githubClientSecret,
-  new Logger(logLevel, ['trending'])
-);
-const witAi = new WitAi(witToken, speaker, new Logger(logLevel, ['wit-ai']));
-
+const controller = Botkit.slackbot({
+  logger: new Logger(logLevel, ['botkit'])
+});
 const bot = controller
   .spawn({ token: slackToken })
   .startRTM((err, bot, payload) => {
@@ -47,7 +35,21 @@ const bot = controller
 
     globalLogger.info('Connected to Slack');
   });
+const globalLogger = new Logger(logLevel);
+
+const brain = new Brain(
+  Redis.createClient({ port: redisPort }),
+  new Logger(logLevel, ['redis'])
+);
+const libraryEngine = new LibraryEngine(new Logger(logLevel, ['libraries']));
+const scoreKeeper = new ScoreKeeper(brain);
+const trendingEngine = new TrendingEngine(
+  githubClientId,
+  githubClientSecret,
+  new Logger(logLevel, ['trending'])
+);
 const speaker = new Speaker(bot, globalLogger);
+const witAi = new WitAi(witToken, speaker, new Logger(logLevel, ['wit-ai']));
 
 const getChannel = channel => Rx.Observable
   .fromNodeCallback(bot.api.channels.info)({ channel: channel })
