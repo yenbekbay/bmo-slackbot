@@ -43,14 +43,10 @@ class Speaker {
   }
 
   sayError(channel, err) {
-    return Rx.Observable
-      .fromNodeCallback(this.bot.say)({
-        text: 'Something went wrong. Please try again or contact @yenbekbay',
-        channel: channel
-      })
-      .doOnError(err => this.logger
-        .error(`Failed to forward the response to channel ${channel}: ${err}`)
-      );
+    return this.sayMessage(
+      channel,
+      'Something went wrong. Please try again or contact @yenbekbay'
+    );
   }
 
   sayMessage(channel, message) {
@@ -66,9 +62,9 @@ class Speaker {
 
     return Rx.Observable
       .fromNodeCallback(this.bot.say)(messageObject)
-      .doOnError(err => this.logger
-        .error(`Failed to forward the response to channel ${channel}: ${err}`)
-      );
+      .doOnError(err => this.logger.error(
+        `Failed to send a message to channel ${channel}: ${err}`
+      ));
   }
 }
 
