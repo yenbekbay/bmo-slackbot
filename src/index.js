@@ -76,6 +76,12 @@ const processVote = (channel, currentUser, votedUser, operator) => {
       vote.user,
       vote.points
     ))
+    .doOnNext(scores => {
+      const direction = operator === '++' ? 'up' : 'down';
+      globalLogger.info(
+        `User ${currentUser} ${direction}voted user ${votedUser}`
+      );
+    })
     .catch(err => speaker.sayError(channel, err));
 };
 
@@ -85,8 +91,11 @@ controller.hears(
     const channel = message.channel;
     const platform = message.match[1].toLowerCase();
 
-    libraryEngine
-      .getCategories(platform)
+    getChannel(channel)
+      .doOnNext(channel => globalLogger.info(
+        `Getting list of library categories in channel ${channel}`
+      ))
+      .flatMap(channe => libraryEngine.getCategories(platform))
       .flatMap(categoriesTree => {
         const formattedPlatform = LibraryEngine.formattedPlatform(platform);
         const pretext = `Library categories for ${formattedPlatform}:`;
@@ -108,8 +117,11 @@ controller.hears(
     const queryArgs = yargsParser(message.match[2]);
     const query = queryArgs._.join(' ');
 
-    libraryEngine
-      .getLibrariesForQuery(platform, query)
+    getChannel(channel)
+      .doOnNext(channel => globalLogger.info(
+        `Getting libraries in channel ${channel}`
+      ))
+      .flatMap(channel => libraryEngine.getLibrariesForQuery(platform, query))
       .flatMap(libraries => {
         let message = {
           text: 'Unfortunately, no libraries were found for this category'
@@ -147,8 +159,11 @@ controller.hears(
       language = language.toLowerCase();
     }
 
-    trendingEngine
-      .getTrendingRepos(language)
+    getChannel(channel)
+      .doOnNext(channel => globalLogger.info(
+        `Getting trending repos in channel ${channel}`
+      ))
+      .flatMap(channel => trendingEngine.getTrendingRepos(language))
       .flatMap(repos => {
         let message = {
           text: 'I couldn\'t find any trending repos' +
@@ -194,6 +209,7 @@ controller.hears(
   ['direct_message', 'direct_mention'], (bot, message) => {
     getUsername(message.user)
       .filter(username => !!username)
+      .doOnNext(username => globalLogger.info(`Greeting user ${username}`))
       .flatMap(username => speaker.greet(message.channel, username))
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
@@ -273,6 +289,9 @@ controller.hears(
   '^\\s*score\\s*$',
   ['direct_message', 'direct_mention'], (bot, message) => {
     getUsername(message.user)
+      .doOnNext(username => globalLogger.info(
+        `Getting score for user ${username}`
+      ))
       .flatMap(username => brain
         .getUserScore(username)
         .flatMap(score => speaker.sayMessage(
@@ -285,8 +304,45 @@ controller.hears(
   });
 
 controller.hears(
+  '^\\s*score\\s+(?:for\\s+)?<@(U.+)>\\s*$',
+  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
+    const user = message.match[1];
+
+    getUsername(user)
+      .doOnNext(username => globalLogger.info(
+        `Getting score for user ${username}`
+      ))
+      .flatMap(username => brain
+        .getUserScore(username)
+        .flatMap(score => speaker.sayMessage(
+          message.channel,
+          `@${username}'s score is: ${score}`
+        ))
+      )
+      .catch(err => speaker.sayError(message.channel, err))
+      .subscribe();
+  });
+
+controller.hears(
+  '^\\s*score\\s+(?:for\\s+)?@?(?!.*<)(.*)\\s*$',
+  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
+    const username = message.match[1];
+
+    globalLogger.info(`Getting score for user ${username}`);
+    brain
+      .getUserScore(username)
+      .flatMap(score => speaker.sayMessage(
+        message.channel,
+        `@${username}'s score is: ${score}`
+      ))
+      .catch(err => speaker.sayError(message.channel, err))
+      .subscribe();
+  });
+
+controller.hears(
   '^\\s*leaderboard\\s*$',
   ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
+    globalLogger.info('Getting leaderboard');
     scoreKeeper
       .getUserScores()
       .flatMap(scores => speaker.sayMessage(message.channel, {
@@ -300,40 +356,13 @@ controller.hears(
 controller.hears(
   '^\\s*what\\s+time(\\s+is\\s+it)?\\s*\\??\\s*$',
   ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
-    speaker
-      .adventureTime(message.channel)
-      .catch(err => speaker.sayError(message.channel, err))
-      .subscribe();
-  });
+    const channel = message.channel;
 
-controller.hears(
-  '^\\s*score\\s+(?:for\\s+)?@?(?!.*<)(.*)\\s*$',
-  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
-    const username = message.match[1];
-
-    brain
-      .getUserScore(username)
-      .flatMap(score => speaker.sayMessage(
-        message.channel,
-        `@${username}'s score is: ${score}`
+    getChannel(channel)
+      .doOnNext(channel => globalLogger.info(
+        `Sending an Adventure Time GIF to channel ${channel}`
       ))
-      .catch(err => speaker.sayError(message.channel, err))
-      .subscribe();
-  });
-
-controller.hears(
-  '^\\s*score\\s+(?:for\\s+)?<@(U.+)>\\s*$',
-  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
-    const user = message.match[1];
-
-    getUsername(user)
-      .flatMap(username => brain
-        .getUserScore(username)
-        .flatMap(score => speaker.sayMessage(
-          message.channel,
-          `@${username}'s score is: ${score}`
-        ))
-      )
+      .flatMap(channel => speaker.adventureTime(channel))
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });
@@ -347,6 +376,11 @@ controller.on('user_channel_join', (bot, message) => {
         return { channel: channel, user: user };
       }
     )
+    .doOnNext(result => {
+      if (result.user) {
+        globalLogger.info(`Welcoming user ${result.user}`);
+      }
+    })
     .flatMap(result => {
       if (result.channel !== 'intro' || !result.user) {
         return Rx.Observable.empty();
