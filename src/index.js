@@ -47,6 +47,16 @@ const bot = controller
   });
 const speaker = new Speaker(bot, globalLogger);
 
+const getChannel = channel => Rx.Observable
+  .fromNodeCallback(bot.api.channels.info)({ channel: channel })
+  .map(response => response.channel
+    ? response.channel.name
+    : response.channel
+  );
+const getUsername = user => Rx.Observable
+  .fromNodeCallback(bot.api.users.info)({ user: user })
+  .map(response => response.user ? response.user.name : response.user);
+
 controller.hears(
   '^(ios|android)\\s+lib(?:rarie)?s\\s+list\\s*$',
   ['direct_message', 'direct_mention'], (bot, message) => {
@@ -180,21 +190,6 @@ controller.hears(
       .catch(err => speaker.sayError(message.channel, err))
       .subscribe();
   });
-
-function getChannel(channel) {
-  return Rx.Observable
-    .fromNodeCallback(bot.api.channels.info)({ channel: channel })
-    .map(response => response.channel
-      ? response.channel.name
-      : response.channel
-    );
-}
-
-function getUsername(user) {
-  return Rx.Observable
-    .fromNodeCallback(bot.api.users.info)({ user: user })
-    .map(response => response.user ? response.user.name : response.user);
-}
 
 controller.hears(
   '^\\s*<@(U.+)>\\s*:?\\s*([-+]{2})\\s*$',
@@ -408,7 +403,7 @@ controller.on('user_channel_join', (bot, message) => {
     });
 });
 
-function findOrCreateSession(message) {
+const findOrCreateSession = message => {
   let sessionId;
   Object.keys(sessions).forEach(k => {
     if (
@@ -428,7 +423,7 @@ function findOrCreateSession(message) {
   }
 
   return sessionId;
-}
+};
 
 const witLogger = new Logger(logLevel, ['witai']);
 const actions = {
