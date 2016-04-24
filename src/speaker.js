@@ -25,7 +25,7 @@ class Speaker {
     this.logger = logger;
   }
 
-  greet(username, channel) {
+  greet(channel, username) {
     const greeting = `@${username}: ` +
       greetings[Math.floor(Math.random() * greetings.length)];
     return this.sayMessage(channel, greeting);

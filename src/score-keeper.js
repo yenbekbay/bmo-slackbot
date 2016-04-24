@@ -12,7 +12,8 @@ class ScoreKeeper {
       throw new Error('Invalid user');
     }
     if (channel) {
-      return this.brain.setLastVotedUser(channel, username)
+      return this.brain
+        .setLastVotedUser(channel, username)
         .flatMap(lastVotedUser => {
           return this.brain.incrementUserScore(username, points);
         });
@@ -22,7 +23,8 @@ class ScoreKeeper {
   }
 
   getUserScores() {
-    return this.brain.getUserScores()
+    return this.brain
+      .getUserScores()
       .map(scores => Object.keys(scores)
         .map(username => {
           return {
@@ -51,14 +53,12 @@ class ScoreKeeper {
         points = points.slice(0, Math.min(10, points.length));
 
         const table = points
-          .map((points, i) => scores[points]
-            .map((username, j) => {
-              const num = `${i + 1}.`;
-              return `${j === 0 ? num : ' '.repeat(num.length)} ` +
-                `${username}: ${points} point${points > 1 ? 's' : ''}` +
-                (i === 0 ? ' 👑' : '');
-            })
-          )
+          .map((points, i) => scores[points].map((username, j) => {
+            const num = `${i + 1}.`;
+            return `${j === 0 ? num : ' '.repeat(num.length)} ` +
+              `${username}: ${points} point${points > 1 ? 's' : ''}` +
+              (i === 0 ? ' 👑' : '');
+          }))
           .reduce((a, b) => a.concat(b));
 
         return `${clark(points)}\n\`\`\`${table.join('\n')}\`\`\``;
@@ -72,11 +72,7 @@ class ScoreKeeper {
         message: 'Please specify the username',
         points: 0
       };
-    } else if (!currentUser || !votedUser) {
-      throw new Error('Invalid user');
-    }
-
-    if (currentUser === votedUser) {
+    } else if (currentUser === votedUser) {
       return {
         user: votedUser,
         message: `@${currentUser}: No cheating 😏`,
