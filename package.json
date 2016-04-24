@@ -25,6 +25,7 @@
     "cheerio": "^0.20.0",
     "clark": "0.0.6",
     "colors": "^1.1.2",
+    "dotenv": "^2.0.0",
     "left-pad": "^1.0.2",
     "nearest-neighbor": "0.0.3",
     "node-wit": "^3.2.0",

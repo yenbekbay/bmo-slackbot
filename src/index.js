@@ -4,6 +4,7 @@ const Botkit = require('botkit');
 const Rx = require('rx-lite');
 const Wit = require('node-wit').Wit;
 const yargsParser = require('yargs-parser');
+require('dotenv').config();
 
 const Brain = require('./brain');
 const levels = require('./logger').logLevels;
