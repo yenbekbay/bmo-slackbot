@@ -65,11 +65,11 @@ const getUsername = user => Rx.Observable
   ));
 const processVote = (channel, currentUser, votedUser, operator) => {
   if (!currentUser || !votedUser) {
-    return;
+    return Rx.Observable.empty();
   }
 
   const vote = ScoreKeeper.parseVote(currentUser, votedUser, operator);
-  speaker
+  return speaker
     .sayMessage(channel, vote.message)
     .flatMap(response => scoreKeeper.updateScore(
       channel,
@@ -399,5 +399,8 @@ controller.on('user_channel_join', (bot, message) => {
 });
 
 controller.hears('.*', ['direct_message', 'direct_mention'], (bot, message) => {
-  witAi.runActions(message).subscribe();
+  witAi
+    .runActions(message)
+    .catch(_ => speaker.sayMessage(message.channel, 'Я тебя не понимаю 😔'))
+    .subscribe();
 });
