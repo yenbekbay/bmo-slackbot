@@ -10,20 +10,26 @@ const Brain = require('./brain');
 const levels = require('./logger').logLevels;
 const LibraryEngine = require('./library-engine');
 const Logger = require('./logger').Logger;
+const Redis = require('redis');
 const ScoreKeeper = require('./score-keeper');
 const Speaker = require('./speaker');
 const TrendingEngine = require('./trending-engine');
 
 const slackToken = process.env.SLACK_TOKEN;
 const witToken = process.env.WIT_TOKEN;
-const redisUrl = process.env.REDIS_URL;
+const redisPort = process.env.NODE_ENV === 'production'
+  ? process.env.REDIS_PORT
+  : 6379;
 const githubClientId = process.env.GITHUB_CLIENT_ID;
 const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
 const logLevel = process.env.NODE_ENV === 'production'
   ? levels.LOG
   : levels.DEBUG;
 
-const brain = new Brain(redisUrl);
+const brain = new Brain(
+  Redis.createClient({ port: redisPort }),
+  new Logger(logLevel, ['redis'])
+);
 const controller = Botkit.slackbot({ debug: false });
 const globalLogger = new Logger(logLevel);
 const libraryEngine = new LibraryEngine();
