@@ -345,9 +345,11 @@ controller.hears(
 controller.hears(
   '^\\s*leaderboard\\s*$',
   ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
-    globalLogger.info('Getting leaderboard');
-    scoreKeeper
-      .getUserScores()
+    getUsername(message.user)
+      .doOnNext(username => globalLogger.info(
+        `Getting leaderboard for user ${username}`
+      ))
+      .flatMap(username => scoreKeeper.getUserScores())
       .flatMap(scores => speaker.sayMessage(message.channel, {
         text: scores,
         mrkdwn: true
