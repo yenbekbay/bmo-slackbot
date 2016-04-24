@@ -25,7 +25,7 @@ class ScoreKeeper {
   getUserScores() {
     return this.brain
       .getUserScores()
-      .map(scores => Object.keys(scores)
+      .map(scores => Object.keys(scores || {})
         .map(username => {
           return {
             username: `@${username}`,

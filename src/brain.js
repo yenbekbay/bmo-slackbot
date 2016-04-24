@@ -9,7 +9,7 @@ class Brain {
 
   getLastVotedUser(channel) {
     return this
-      ._getHashValue('last_voted_users', channel)
+      ._runCommand('hget', 'last_voted_users', channel)
       .doOnError(err => this.logger.error(
         `Failed to get last voted user for channel ${channel}: ${err}`
       ));
@@ -17,7 +17,7 @@ class Brain {
 
   setLastVotedUser(channel, username) {
     return this
-      ._setHashValue('last_voted_users', channel, username)
+      ._runCommand('hset', 'last_voted_users', channel, username)
       .doOnError(err => this.logger.error(
         `Failed to set last voted user for channel ${channel}: ${err}`
       ));
@@ -25,7 +25,7 @@ class Brain {
 
   getUserScore(username) {
     return this
-      ._getHashValue('user_scores', username)
+      ._runCommand('hget', 'user_scores', username)
       .map(score => score || 0)
       .doOnError(err => this.logger.error(
         `Failed to get score for user ${username}: ${err}`
@@ -33,39 +33,27 @@ class Brain {
   }
 
   getUserScores() {
-    return Rx.Observable
-      .fromNodeCallback(
-        this.redisClient.hgetall,
-        this.redisClient
-      )('user_scores')
+    return this
+      ._runCommand('hgetall', 'user_scores')
       .doOnError(err => this.logger.error(
         `Failed to get user scores: ${err}`
       ));
   }
 
   incrementUserScore(username, points) {
-    return Rx.Observable
-      .fromNodeCallback(
-        this.redisClient.hincrby,
-        this.redisClient
-      )('user_scores', username, points)
+    return this
+      ._runCommand('hincrby', 'user_scores', username, points)
       .doOnError(err => this.logger.error(
         `Failed to increment score for user ${username}: ${err}`
       ));
   }
 
-  _getHashValue(key, field) {
+  _runCommand() {
+    const args = Array.prototype.slice.call(arguments);
     return Rx.Observable.fromNodeCallback(
-      this.redisClient.hget,
+      this.redisClient[args[0]],
       this.redisClient
-    )(key, field);
-  }
-
-  _setHashValue(key, field, value) {
-    return Rx.Observable.fromNodeCallback(
-      this.redisClient.hset,
-      this.redisClient
-    )(key, field, value);
+    )(...args.slice(1));
   }
 }
 
