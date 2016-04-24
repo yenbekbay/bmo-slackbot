@@ -11,7 +11,8 @@ const AwesomeAndroidScraper =
   require('./awesome-list-scrapers/awesome-android-scraper');
 
 class LibraryEngine {
-  constructor() {
+  constructor(logger) {
+    this.logger = logger;
     this.awesomeListScrapers = {
       ios: [
         new AwesomeIosScraper(),
@@ -28,7 +29,8 @@ class LibraryEngine {
 
     return Rx.Observable
       .merge(scrapers.map(scraper => scraper.getLibrariesForQuery(query)))
-      .toArray().map(libraries => libraries
+      .toArray()
+      .map(libraries => libraries
         .reduce((a, b) => a.concat(b))
         .reduce((libraries, library) => {
           const links = libraries.map(library => library.link);
@@ -45,7 +47,13 @@ class LibraryEngine {
           }
           return 0;
         })
-      );
+      )
+      .doOnError(err => this.logger.error(
+        `Failed to get ${platform} libraries for "${query}": ${err}`
+      ))
+      .doOnNext(libraries => this.logger.info(
+        `Got ${libraries.length} ${platform} libraries for "${query}"`
+      ));
   }
 
   getCategories(platform) {
@@ -71,17 +79,23 @@ class LibraryEngine {
           return 0;
         })
       )
-      .map(categories => {
-        const categoriesTree = this.constructor._categoriesTree(
+      .map(categories => this.constructor
+        ._categoriesTree(
           [{ title: 'Categories', depth: 1 }]
             .concat(categories.map(category => {
               category.depth = 2;
               return category;
             })
-        )).map(category => '*'.repeat(category.depth) + category.title);
-
-        return asciiTree.generate(categoriesTree.join('\r\n'));
-      });
+        ))
+        .map(category => '*'.repeat(category.depth) + category.title)
+      )
+      .doOnError(err => this.logger.error(
+        `Failed to get list of library categories for ${platform}: ${err}`
+      ))
+      .doOnNext(categories => this.logger.info(
+        `Got ${categories.length} library categories for ${platform}`
+      ))
+      .map(categoriesTree => asciiTree.generate(categoriesTree.join('\r\n')));
   }
 
   static formattedPlatform(platform) {

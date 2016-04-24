@@ -11,9 +11,10 @@ const githubApiUrl = 'https://api.github.com';
 const trendingUrl = 'http://app.gitlogs.com/trending';
 
 class TrendingEngine {
-  constructor(githubClientId, githubClientSecret) {
+  constructor(githubClientId, githubClientSecret, logger) {
     this.githubClientId = githubClientId;
     this.githubClientSecret = githubClientSecret;
+    this.logger = logger;
     this.provider = new Provider();
   }
 
@@ -79,7 +80,14 @@ class TrendingEngine {
           });
 
         return repos;
-      });
+      })
+      .doOnError(err => this.logger.error(
+        'Failed to get trending repos for ' +
+        `${language || 'all languages'}: ${err}`
+      ))
+      .doOnNext(repos => this.logger.info(
+        `Got ${repos.length} trending repos for ${language || 'all languages'}`
+      ));
   }
 }
 
