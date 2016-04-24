@@ -21,10 +21,10 @@ const witToken = process.env.WIT_TOKEN;
 const redisPort = production ? process.env.REDIS_PORT : 6379;
 const githubClientId = process.env.GITHUB_CLIENT_ID;
 const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
-const logLevel = production ? levels.INFO : levels.INFO;
+const logLevel = production ? levels.INFO : levels.DEBUG;
 
 const controller = Botkit.slackbot({
-  logger: new Logger(logLevel, ['botkit'])
+  logger: new Logger(levels.INFO, ['botkit'])
 });
 const bot = controller
   .spawn({ token: slackToken })
