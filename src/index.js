@@ -2,7 +2,6 @@
 
 const Botkit = require('botkit');
 const Rx = require('rx-lite');
-const Wit = require('node-wit').Wit;
 const yargsParser = require('yargs-parser');
 require('dotenv').config();
 
@@ -14,6 +13,7 @@ const Redis = require('redis');
 const ScoreKeeper = require('./score-keeper');
 const Speaker = require('./speaker');
 const TrendingEngine = require('./trending-engine');
+const WitAi = require('./wit-ai');
 
 const debug = process.env.NODE_ENV === 'production';
 const slackToken = process.env.SLACK_TOKEN;
@@ -36,6 +36,7 @@ const trendingEngine = new TrendingEngine(
   githubClientSecret,
   new Logger(logLevel, ['trending'])
 );
+const witAi = new WitAi(witToken, speaker, new Logger(logLevel, ['wit-ai']));
 
 const bot = controller
   .spawn({ token: slackToken })
@@ -363,64 +364,6 @@ controller.on('user_channel_join', (bot, message) => {
     .subscribe();
 });
 
-const findOrCreateSession = message => {
-  let sessionId;
-  Object.keys(sessions).forEach(k => {
-    if (
-      sessions[k].channel === message.channel &&
-      sessions[k].user === message.user
-    ) {
-      sessionId = k;
-    }
-  });
-  if (!sessionId) {
-    sessionId = new Date().toISOString();
-    sessions[sessionId] = {
-      channel: message.channel,
-      user: message.user,
-      context: {}
-    };
-  }
-
-  return sessionId;
-};
-
-const witLogger = new Logger(logLevel, ['witai']);
-const actions = {
-  say(sessionId, context, message, cb) {
-    const session = sessions[sessionId] || {};
-    speaker.sayMessage(session.channel, message).finally(cb).subscribe();
-  },
-  merge(sessionId, context, entities, message, cb) {
-    cb(context);
-  },
-  error(sessionId, context, err) {
-    witLogger.error(err);
-
-    const session = sessions[sessionId] || {};
-    speaker.sayError(session.channel, err).subscribe();
-  }
-};
-const wit = new Wit(witToken, actions, witLogger);
-
-// This will contain all user sessions
-// Each session has an entry:
-// sessionId -> {
-//   channel: messageChannel,
-//   user: messageUser,
-//   context: sessionState
-// }
-let sessions = {};
-
 controller.hears('.*', ['direct_message', 'direct_mention'], (bot, message) => {
-  const sessionId = findOrCreateSession(message);
-  const text = message.match[0];
-  const context = sessions[sessionId].context;
-
-  Rx.Observable
-    .fromNodeCallback(wit.runActions)(sessionId, text, context)
-    .finally(() => {
-      delete sessions[sessionId];
-    })
-    .subscribeOnError(err => witLogger.error('Failed to run actions:', err));
+  witAi.runActions(message).subscribe();
 });
