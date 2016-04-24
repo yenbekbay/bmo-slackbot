@@ -1,17 +1,17 @@
 'use strict';
 
-const colors = require('colors');
+require('colors');
 
 const LEVELS = {
   DEBUG: 0,
-  LOG: 1,
+  INFO: 1,
   WARN: 2,
   ERROR: 3
 };
 
 class Logger {
   constructor(level, tags) {
-    this.level = (level === undefined || level === null) ? LEVELS.LOG : level;
+    this.level = (level === undefined || level === null) ? LEVELS.INFO : level;
     this.tags = tags || [];
   }
 
@@ -33,9 +33,9 @@ class Logger {
     }
   }
 
-  log(message) {
-    if (LEVELS.LOG >= this.level) {
-      this._log(message);
+  info(message) {
+    if (LEVELS.INFO >= this.level) {
+      this._log(message, 'info');
     }
   }
 
@@ -44,38 +44,23 @@ class Logger {
       return;
     }
 
-    if (this.winston && this.tags.length > 0) {
+    if (this.tags.length > 0) {
       message = `[${this.tags.join(',')}] ${message}`;
     }
+    message = `${new Date().toISOString()} [${level}] ${message}`;
 
     switch (level) {
       case 'error':
-        if (this.winston) {
-          this.winston.error(message);
-        } else {
-          console.error(colors.red('[error] %s'), message);
-        }
+        console.error(message.red);
         break;
       case 'warn':
-        if (this.winston) {
-          this.winston.warn(message);
-        } else {
-          console.error(colors.yellow('[warn] %s'), message);
-        }
+        console.error(message.yellow);
         break;
       case 'debug':
-        if (this.winston) {
-          this.winston.debug(message);
-        } else {
-          console.log(colors.cyan('[debug] %s'), message);
-        }
+        console.log(message.cyan);
         break;
       default:
-        if (this.winston) {
-          this.winston.info(message);
-        } else {
-          console.log(message);
-        }
+        console.log(message);
         break;
     }
   }
