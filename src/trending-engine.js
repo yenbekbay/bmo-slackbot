@@ -18,7 +18,6 @@ class TrendingEngine {
   }
 
   getTrendingRepos(language, limit) {
-    const self = this;
     const today = new Date();
     const date = [
       today.getUTCFullYear(),
@@ -44,7 +43,7 @@ class TrendingEngine {
               `client_id=${this.githubClientId}&` +
               `client_secret=${this.githubClientSecret}`;
 
-            return self.provider
+            return this.provider
               .requestWithUrl(url)
               .flatMap(body => Rx.Observable.fromNodeCallback(jsonParse)(body))
               .map(result => {

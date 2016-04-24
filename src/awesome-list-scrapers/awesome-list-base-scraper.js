@@ -12,25 +12,21 @@ class AwesomeListBaseScraper {
   }
 
   getLibrariesForQuery(query) {
-    const self = this;
-
     return this.provider
       .requestWithUrl(this._url)
       .flatMap(body => {
         const $ = cheerio.load(body);
 
-        return self.constructor
-          ._findCategory(query, self._parseCategories($))
-          .map(category => !category ? [] : self._parseLibraries($, category));
+        return this.constructor
+          ._findCategory(query, this._parseCategories($))
+          .map(category => !category ? [] : this._parseLibraries($, category));
       });
   }
 
   getCategories() {
-    const self = this;
-
     return this.provider
       .requestWithUrl(this._url)
-      .map(body => self._parseCategories(cheerio.load(body)));
+      .map(body => this._parseCategories(cheerio.load(body)));
   }
 
   _parseCategories($) {

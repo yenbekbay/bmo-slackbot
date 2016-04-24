@@ -13,8 +13,6 @@ class Provider {
   }
 
   requestWithUrl(url) {
-    const self = this;
-
     const observable = Rx.Observable.fromNodeCallback(this.request)(url)
       .map(result => {
         const response = result[0];
@@ -34,10 +32,9 @@ class Provider {
     return observable.catch(err => {
       errorCount++;
 
-      const delay = Math.round(Math.pow(errorCount, 1.5)) *
-        self.loadRetryDelay;
-
-      return Rx.Observable.empty().delay(delay)
+      return Rx.Observable
+        .empty()
+        .delay(Math.round(Math.pow(errorCount, 1.5)) * this.loadRetryDelay)
         .concat(Rx.Observable.throw(err));
     }).retry(3);
   }

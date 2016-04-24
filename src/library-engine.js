@@ -49,7 +49,6 @@ class LibraryEngine {
   }
 
   getCategories(platform) {
-    const self = this;
     const scrapers = this.awesomeListScrapers[platform];
 
     return Rx.Observable
@@ -73,7 +72,7 @@ class LibraryEngine {
         })
       )
       .map(categories => {
-        const categoriesTree = self.constructor._categoriesTree(
+        const categoriesTree = this.constructor._categoriesTree(
           [{ title: 'Categories', depth: 1 }]
             .concat(categories.map(category => {
               category.depth = 2;
