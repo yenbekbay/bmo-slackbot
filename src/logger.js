@@ -16,11 +16,11 @@ class Logger {
   }
 
   error(message) {
-    this.log(message, 'error');
+    this.log('error', message);
   }
 
   warn(message) {
-    this.log(message, 'warn');
+    this.log('warn', message);
   }
 
   debug(message) {
