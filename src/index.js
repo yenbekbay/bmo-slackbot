@@ -77,6 +77,9 @@ const processVote = (channel, currentUser, votedUser, operator) => {
       vote.points
     ))
     .doOnNext(scores => {
+      if (vote.points === 0) {
+        return;
+      }
       const direction = operator === '++' ? 'up' : 'down';
       globalLogger.info(
         `User ${currentUser} ${direction}voted user ${votedUser}`
