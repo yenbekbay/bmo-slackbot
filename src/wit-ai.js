@@ -16,14 +16,14 @@ class WitAi {
 
     this.logger = logger;
     const actions = {
-      say(sessionId, context, message, cb) {
+      say: (sessionId, context, message, cb) => {
         const session = this.sessions[sessionId] || {};
         speaker.sayMessage(session.channel, message).finally(cb).subscribe();
       },
-      merge(sessionId, context, entities, message, cb) {
+      merge: (sessionId, context, entities, message, cb) => {
         cb(context);
       },
-      error(sessionId, context, err) {
+      error: (sessionId, context, err) => {
         logger.error(err);
 
         const session = this.sessions[sessionId] || {};
