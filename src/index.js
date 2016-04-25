@@ -284,7 +284,7 @@ controller.on('reaction_added', (bot, message) => {
       }
     )
     .flatMap(users => processVote(
-      message.channel,
+      message.item.channel,
       users.currentUser,
       users.votedUser,
       reaction
