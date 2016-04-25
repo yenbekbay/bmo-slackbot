@@ -58,6 +58,7 @@ class Logger {
         break;
     }
 
+    message = message.replace(/^\*\*\s+/, '');
     if (this.tags.length > 0) {
       message = `[${this.tags.join(',')}] ${message}`;
     }
