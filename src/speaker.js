@@ -52,7 +52,7 @@ class Speaker {
   sayMessage(channel, message) {
     let messageObject = {};
     if (!message || !channel) {
-      return this.sayError(channel);
+      return Rx.Observable.empty();
     } else if (typeof message === 'object') {
       messageObject = message;
     } else {
