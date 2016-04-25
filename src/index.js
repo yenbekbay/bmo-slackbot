@@ -271,6 +271,10 @@ controller.on('reaction_added', (bot, message) => {
   const votedUser = message.item_user;
   const reaction = message.reaction;
 
+  if (['+1', '-1'].indexOf(reaction) === -1) {
+    return;
+  }
+
   Rx.Observable
     .zip(
       getUsername(currentUser),
