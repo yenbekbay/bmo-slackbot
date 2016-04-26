@@ -54,15 +54,6 @@
     "nodemon": "^1.9.1",
     "tap-dot": "^1.0.5"
   },
-  "ava": {
-    "files": [
-      "test/*.js",
-      "!test/utils.js"
-    ],
-    "source": [
-      "src/*.js"
-    ]
-  },
   "repository": "yenbekbay/bmo-slackbot",
   "license": "MIT"
 }
