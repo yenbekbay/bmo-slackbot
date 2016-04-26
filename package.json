@@ -29,6 +29,7 @@
     "clark": "0.0.6",
     "colors": "^1.1.2",
     "dotenv": "^2.0.0",
+    "json-stringify-safe": "^5.0.1",
     "left-pad": "^1.0.2",
     "nearest-neighbor": "0.0.3",
     "node-wit": "^3.2.0",
