@@ -15,30 +15,41 @@ class Logger {
     this.tags = tags || [];
   }
 
-  error(message) {
-    this.log('error', message);
+  error() {
+    const args = Array.prototype.slice.call(arguments);
+    this.log('error', ...args);
   }
 
-  warn(message) {
-    this.log('warn', message);
+  warn() {
+    const args = Array.prototype.slice.call(arguments);
+    this.log('warn', ...args);
   }
 
-  debug(message) {
-    this.log('debug', message);
+  debug() {
+    const args = Array.prototype.slice.call(arguments);
+    this.log('debug', ...args);
   }
 
-  info(message) {
-    this.log('info', message);
+  info() {
+    const args = Array.prototype.slice.call(arguments);
+    this.log('info', ...args);
   }
 
   log() {
-    const args = Array.prototype.slice.call(arguments);
+    let args = Array.prototype.slice.call(arguments);
     if (args.length === 0) {
       return;
     }
-    const level = args[0];
-    let message = args.slice(1).join(' ');
 
+    const level = args[0];
+    let tags = this.tags;
+    args = args.slice(1);
+    if (Array.isArray(args[0])) {
+      tags = tags.concat(args[0]);
+      args = args.slice(1);
+    }
+
+    let message = args.join(' ');
     if (!message) {
       return;
     }
@@ -59,8 +70,8 @@ class Logger {
     }
 
     message = message.replace(/^\*\*\s+/, '');
-    if (this.tags.length > 0) {
-      message = `[${this.tags.join(',')}] ${message}`;
+    if (tags.length > 0) {
+      message = `[${tags.join(',')}] ${message}`;
     }
     message = `[${level}] ${message}`;
 
