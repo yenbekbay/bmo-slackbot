@@ -5,3 +5,4 @@ GITHUB_CLIENT_ID=<your-github-client-id>
 GITHUB_CLIENT_SECRET=<your-github-client-secret>
 REMOTE_HOST=<your-remote-host>
 REMOTE_USER=<your-remote-user>
+PRIVATE_KEY=<path-to-your-private-key>
