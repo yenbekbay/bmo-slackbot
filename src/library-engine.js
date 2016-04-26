@@ -48,12 +48,12 @@ class LibraryEngine {
           return 0;
         })
       )
-      .doOnError(err => this.logger.error(
-        `Failed to get ${platform} libraries for "${query}": ${err}`
-      ))
-      .doOnNext(libraries => this.logger.info(
-        `Got ${libraries.length} ${platform} libraries for "${query}"`
-      ));
+      .doOnError(err => this.logger
+        .error(`Failed to get ${platform} libraries for "${query}": ${err}`)
+      )
+      .doOnNext(libraries => this.logger
+        .info(`Got ${libraries.length} ${platform} libraries for "${query}"`)
+      );
   }
 
   getCategories(platform) {
@@ -92,9 +92,9 @@ class LibraryEngine {
       .doOnError(err => this.logger.error(
         `Failed to get list of library categories for ${platform}: ${err}`
       ))
-      .doOnNext(categories => this.logger.info(
-        `Got ${categories.length} library categories for ${platform}`
-      ))
+      .doOnNext(categories => this.logger
+        .info(`Got ${categories.length} library categories for ${platform}`)
+      )
       .map(categoriesTree => asciiTree.generate(categoriesTree.join('\r\n')));
   }
 

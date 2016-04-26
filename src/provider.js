@@ -13,7 +13,8 @@ class Provider {
   }
 
   requestWithUrl(url) {
-    const observable = Rx.Observable.fromNodeCallback(this.request)(url)
+    const observable = Rx.Observable
+      .fromNodeCallback(this.request)(url)
       .map(result => {
         const response = result[0];
         const body = result[1];
@@ -23,20 +24,23 @@ class Provider {
         } else {
           throw new Error(`Status code ${response.statusCode}`);
         }
-      }).catch(err => {
+      })
+      .catch(err => {
         return Rx.Observable
           .throw(new Error(`${url} can't be reached: ${err.message}`));
       });
 
     let errorCount = 0;
-    return observable.catch(err => {
-      errorCount++;
+    return observable
+      .catch(err => {
+        errorCount++;
 
-      return Rx.Observable
-        .empty()
-        .delay(Math.round(Math.pow(errorCount, 1.5)) * this.loadRetryDelay)
-        .concat(Rx.Observable.throw(err));
-    }).retry(3);
+        return Rx.Observable
+          .empty()
+          .delay(Math.round(Math.pow(errorCount, 1.5)) * this.loadRetryDelay)
+          .concat(Rx.Observable.throw(err));
+      })
+      .retry(3);
   }
 }
 
