@@ -11,8 +11,7 @@ On your server:
 In your local development environment:
 
 1. Copy `env-example` to `.env` and edit the values to your own.
-2. Install `flightplan` with `npm install -g flightplan`
-3. Deploy to your server with `fly deploy:production`
+2. Deploy to your server with `npm deploy`
 
 ## License
 

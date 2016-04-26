@@ -14,7 +14,8 @@
   "main": "src/index.js",
   "scripts": {
     "test": "lab",
-    "start": "nodemon -e js src/index.js"
+    "start": "nodemon -e js src/index.js",
+    "deploy": "fly deploy:production"
   },
   "keywords": [
     "slackbot",
