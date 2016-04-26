@@ -4,7 +4,7 @@ const Rx = require('rx-lite');
 const Wit = require('node-wit').Wit;
 
 class WitAi {
-  constructor(witToken, speaker, logger) {
+  constructor(witToken, slackApi, logger) {
     // This will contain all user sessions
     // Each session has an entry:
     // sessionId -> {
@@ -18,7 +18,7 @@ class WitAi {
     const actions = {
       say: (sessionId, context, message, cb) => {
         const session = this.sessions[sessionId] || {};
-        speaker.sayMessage(session.channel, message).finally(cb).subscribe();
+        slackApi.sayMessage(session.channel, message).finally(cb).subscribe();
       },
       merge: (sessionId, context, entities, message, cb) => {
         cb(context);
@@ -27,7 +27,7 @@ class WitAi {
         logger.error(err);
 
         const session = this.sessions[sessionId] || {};
-        speaker.sayError(session.channel, err).subscribe();
+        slackApi.sayError(session.channel, err).subscribe();
       }
     };
     this.wit = new Wit(witToken, actions, logger);

@@ -11,8 +11,8 @@ const LibraryEngine = require('./library-engine');
 const Logger = require('./logger').Logger;
 const Redis = require('redis');
 const ScoreKeeper = require('./score-keeper');
-const Speaker = require('./speaker');
 const TrendingEngine = require('./trending-engine');
+const SlackApi = require('./slack-api');
 const WitAi = require('./wit-ai');
 
 const production = process.env.NODE_ENV === 'production';
@@ -49,7 +49,7 @@ const trendingEngine = new TrendingEngine(
   new Logger(logLevel, ['trending'])
 );
 const speaker = new Speaker(bot, globalLogger);
-const witAi = new WitAi(witToken, speaker, new Logger(logLevel, ['wit-ai']));
+const witAi = new WitAi(witToken, slackApi, new Logger(logLevel, ['wit-ai']));
 
 const getChannel = channel => Rx.Observable
   .fromNodeCallback(bot.api.channels.info)({ channel: channel })
