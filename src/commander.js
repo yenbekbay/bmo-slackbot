@@ -434,13 +434,22 @@ class Commander {
   }
 
   _getUserScores() {
-    return this.brain
-      .getUserScores()
-      .map(scores => Object.keys(scores || {})
-        .map(username => {
+    return Rx.Observable
+      .zip(
+        this.brain.getUserScores(),
+        this.brain.getUsers(),
+        (scores, users) => {
+          return { scores: scores, users: users };
+        }
+      )
+      .map(results => Object.keys(results.scores || {})
+        .map(userId => {
+          const user = results.users.find(user => user.id === userId);
+          const username = (user || {}).name;
+
           return {
-            username: `@${username}`,
-            points: parseInt(scores[username], 10)
+            username: username ? `@${username}` : 'mystery',
+            points: parseInt(results.scores[userId], 10)
           };
         })
         .filter(score => score.points > 0)
