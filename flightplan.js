@@ -40,3 +40,13 @@ plan.remote('deploy', remote => {
   remote.log('Restart application');
   remote.exec(`cd ~/${appName} && sudo pm2 startOrRestart ecosystem.json`);
 });
+
+plan.remote('restart', remote => {
+  remote.log('Stop application');
+  remote.exec(`sudo pm2 restart ${appName}`);
+});
+
+plan.remote('stop', remote => {
+  remote.log('Stop application');
+  remote.exec(`sudo pm2 stop ${appName}`);
+});
