@@ -36,6 +36,10 @@ class Brain {
   getLastVotedUser(channelId) {
     return this
       ._runCommand('hget', 'last_voted_users', channelId)
+      .flatMap(userId => userId
+        ? this.getUser(userId)
+        : Rx.Observable.return(null)
+      )
       .doOnError(err => this.logger
         .error(`Failed to get last voted user for channel ${channelId}: ${err}`)
       )
