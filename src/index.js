@@ -37,7 +37,7 @@ const witAi = new WitAi({
 
 controller.hears(
   '^(?:hi|hello|whatsup|howdy|greetings|privet|salem)(?:\\s+.*)?$',
-  ['direct_message', 'direct_mention'], (bot, message) => commander
+  ['direct_message', 'direct_mention'], (_, message) => commander
     .runCommand('greet', {
       channelId: message.channel,
       userId: message.user
@@ -46,7 +46,7 @@ controller.hears(
 
 controller.hears(
   '^(ios|android)\\s+lib(?:rarie)?s\\s+list\\s*$',
-  ['direct_message', 'direct_mention'], (bot, message) => commander
+  ['direct_message', 'direct_mention'], (_, message) => commander
     .runCommand('getLibraryCategories', {
       channelId: message.channel,
       userId: message.user,
@@ -56,7 +56,7 @@ controller.hears(
 
 controller.hears(
   '^(ios|android)\\s+lib(?:rarie)?s(?:\\s+for\\s+|\\s+)(.+)\\s*$',
-  ['direct_message', 'direct_mention'], (bot, message) => commander
+  ['direct_message', 'direct_mention'], (_, message) => commander
     .runCommand('getLibraries', {
       channelId: message.channel,
       userId: message.user,
@@ -67,7 +67,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*trending(?:\\s+repos)?(?:$|(?:\\s+for)?\\s+(.+)\\s*$)',
-  ['direct_message', 'direct_mention'], (bot, message) => commander
+  ['direct_message', 'direct_mention'], (_, message) => commander
     .runCommand('getTrendingRepos', {
       channelId: message.channel,
       userId: message.user,
@@ -77,7 +77,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*<@(U.+)>\\s*:?\\s*([-+]{2})\\s*$',
-  ['ambient'], (bot, message) => commander
+  ['ambient'], (_, message) => commander
     .runCommand('vote', {
       channelId: message.channel,
       userId: message.user,
@@ -88,7 +88,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*@?([\\w\\.\\-]*)\\s*:?\\s*([-+]{2})\\s*$',
-  ['ambient'], (bot, message) => commander
+  ['ambient'], (_, message) => commander
     .runCommand('vote', {
       channelId: message.channel,
       userId: message.user,
@@ -97,7 +97,7 @@ controller.hears(
     })
   );
 
-controller.on('reaction_added', (bot, message) => commander
+controller.on('reaction_added', (_, message) => commander
   .runCommand('vote', {
     channelId: message.item.channel,
     userId: message.user,
@@ -110,7 +110,7 @@ controller.on('reaction_added', (bot, message) => commander
 
 controller.hears(
   '^\\s*score\\s*$',
-  ['direct_message', 'direct_mention'], (bot, message) => commander
+  ['direct_message', 'direct_mention'], (_, message) => commander
     .runCommand('userScore', {
       channelId: message.channel,
       userId: message.user,
@@ -120,7 +120,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*score\\s+(?:for\\s+)?<@(U.+)>\\s*$',
-  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => commander
+  ['ambient', 'direct_message', 'direct_mention'], (_, message) => commander
     .runCommand('userScore', {
       channelId: message.channel,
       userId: message.user,
@@ -130,7 +130,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*score\\s+(?:for\\s+)?@?(?!.*<)(.*)\\s*$',
-  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => commander
+  ['ambient', 'direct_message', 'direct_mention'], (_, message) => commander
     .runCommand('userScore', {
       channelId: message.channel,
       userId: message.user,
@@ -140,7 +140,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*leaderboard\\s*$',
-  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => commander
+  ['ambient', 'direct_message', 'direct_mention'], (_, message) => commander
     .runCommand('leaderboard', {
       channelId: message.channel,
       userId: message.user
@@ -149,21 +149,21 @@ controller.hears(
 
 controller.hears(
   '^\\s*what\\s+time(\\s+is\\s+it)?\\s*\\??\\s*$',
-  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => commander
+  ['ambient', 'direct_message', 'direct_mention'], (_, message) => commander
     .runCommand('adventureTime', {
       channelId: message.channel,
       userId: message.user
     })
   );
 
-controller.on('user_channel_join', (bot, message) => commander
+controller.on('user_channel_join', (_, message) => commander
   .runCommand('welcome', {
     channelId: message.channel,
     userId: message.user
   })
 );
 
-controller.hears('.*', ['direct_message', 'direct_mention'], (bot, message) => {
+controller.hears('.*', ['direct_message', 'direct_mention'], (_, message) => {
   witAi
     .runActions(message)
     .catch(_ => bot.sayMessage({
