@@ -6,7 +6,7 @@ class AwesomeAndroidScraper extends AwesomeListBaseScraper {
   constructor() {
     super();
 
-    this._url = 'https://github.com/JStumpp/awesome-android';
+    this.url = 'https://github.com/JStumpp/awesome-android';
     this._categoriesListSelector = 'li > a[href="#libraries"]';
   }
 }

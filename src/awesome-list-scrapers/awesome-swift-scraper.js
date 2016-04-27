@@ -6,7 +6,7 @@ class AwesomeSwiftScraper extends AwesomeListBaseScraper {
   constructor() {
     super();
 
-    this._url = 'https://github.com/matteocrippa/awesome-swift';
+    this.url = 'https://github.com/matteocrippa/awesome-swift';
     this._categoriesListSelector = 'li > a[href="#libs"]';
   }
 

@@ -12,10 +12,10 @@ const trendingUrl = 'http://app.gitlogs.com/trending';
 
 class TrendingEngine {
   constructor(githubClientId, githubClientSecret, logger) {
-    this.githubClientId = githubClientId;
-    this.githubClientSecret = githubClientSecret;
-    this.logger = logger;
-    this.provider = new Provider();
+    this._githubClientId = githubClientId;
+    this._githubClientSecret = githubClientSecret;
+    this._logger = logger;
+    this._provider = new Provider();
   }
 
   getTrendingRepos(language, limit) {
@@ -26,7 +26,7 @@ class TrendingEngine {
       leftpad(today.getUTCDate() - 1, 2, 0)
     ];
 
-    return this.provider
+    return this._provider
       .requestWithUrl(`${trendingUrl}?date=${date.join('-')}`)
       .flatMap(body => Rx.Observable.fromNodeCallback(jsonParse)(body))
       .map(results => results
@@ -41,10 +41,10 @@ class TrendingEngine {
             return Rx.Observable.return(repo);
           } else {
             const url = `${githubApiUrl}/repos/${repo.name}?` +
-              `client_id=${this.githubClientId}&` +
-              `client_secret=${this.githubClientSecret}`;
+              `client_id=${this._githubClientId}&` +
+              `client_secret=${this._githubClientSecret}`;
 
-            return this.provider
+            return this._provider
               .requestWithUrl(url)
               .flatMap(body => Rx.Observable.fromNodeCallback(jsonParse)(body))
               .map(result => {
@@ -81,11 +81,11 @@ class TrendingEngine {
 
         return repos;
       })
-      .doOnError(err => this.logger.error(
+      .doOnError(err => this._logger.error(
         'Failed to get trending repos for ' +
         `${language || 'all languages'}: ${err}`
       ))
-      .doOnNext(repos => this.logger.info(
+      .doOnNext(repos => this._logger.info(
         `Got ${repos.length} trending repos for ${language || 'all languages'}`
       ));
   }

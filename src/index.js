@@ -3,10 +3,10 @@
 const Botkit = require('botkit');
 require('dotenv').config();
 
+const Bot = require('./bot');
 const Commander = require('./commander');
 const levels = require('./logger').logLevels;
 const Logger = require('./logger').Logger;
-const SlackApi = require('./slack-api');
 const WitAi = require('./wit-ai');
 
 const slackToken = process.env.SLACK_TOKEN;
@@ -20,18 +20,20 @@ const logger = new Logger(levels.INFO);
 const controller = Botkit.slackbot({
   logger: new Logger(levels.INFO, ['botkit'])
 });
-const bot = controller
-  .spawn({ token: slackToken })
-  .startRTM((err, bot, payload) => {
-    if (err) {
-      throw new Error(`Error connecting to Slack: ${err}`);
-    }
-
-    logger.info('Connected to Slack');
-  });
-const slackApi = new SlackApi(bot, new Logger(logLevel, ['slack-api']));
-const commander = new Commander(bot, slackApi, logger);
-const witAi = new WitAi(witToken, slackApi, new Logger(logLevel, ['wit-ai']));
+const bot = new Bot({
+  controller: controller,
+  slackToken: slackToken,
+  logger: new Logger(logLevel, ['slack-api'])
+});
+const commander = new Commander({
+  bot: bot,
+  logger: logger
+});
+const witAi = new WitAi({
+  bot: bot,
+  witToken: witToken,
+  logger: new Logger(logLevel, ['wit-ai'])
+});
 
 controller.hears(
   '^(?:hi|hello|whatsup|howdy|greetings|privet|salem)(?:\\s+.*)?$',
@@ -164,7 +166,7 @@ controller.on('user_channel_join', (bot, message) => commander
 controller.hears('.*', ['direct_message', 'direct_mention'], (bot, message) => {
   witAi
     .runActions(message)
-    .catch(_ => slackApi.sayMessage({
+    .catch(_ => bot.sayMessage({
       channel: message.channel,
       text: 'Я тебя не понимаю 😔'
     }))

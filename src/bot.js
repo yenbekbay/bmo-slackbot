@@ -2,32 +2,40 @@
 
 const Rx = require('rx-lite');
 
-class SlackApi {
-  constructor(bot, logger) {
-    this.bot = bot;
-    this.logger = logger;
+class Bot {
+  constructor(config) {
+    this._logger = config.logger;
+    this._bot = config.controller
+      .spawn({ token: config.slackToken })
+      .startRTM((err, bot, payload) => {
+        if (err) {
+          throw new Error(`Error connecting to Slack: ${err}`);
+        }
+
+        this._logger.info('Connected to Slack');
+      });
   }
 
   getUsers() {
     return Rx.Observable
-      .fromNodeCallback(this.bot.api.users.list)({})
+      .fromNodeCallback(this._bot.api.users.list)({})
       .map(response => (response || {}).members)
-      .doOnError(err => this.logger
+      .doOnError(err => this._logger
         .error(`Failed to get users on the team: ${err}`)
       )
-      .doOnNext(users => this.logger
+      .doOnNext(users => this._logger
         .debug(`Got ${(users || []).length} users on the team`)
       );
   }
 
   getChannels() {
     return Rx.Observable
-      .fromNodeCallback(this.bot.api.channels.list)({})
+      .fromNodeCallback(this._bot.api.channels.list)({})
       .map(response => (response || {}).channels)
-      .doOnError(err => this.logger
+      .doOnError(err => this._logger
         .error(`Failed to get channels on the team: ${err}`)
       )
-      .doOnNext(channels => this.logger
+      .doOnNext(channels => this._logger
         .debug(`Got ${(channels || []).length} channels on the team`)
       );
   }
@@ -45,11 +53,11 @@ class SlackApi {
     }
 
     return Rx.Observable
-      .fromNodeCallback(this.bot.say)(message)
-      .doOnError(err => this.logger
+      .fromNodeCallback(this._bot.say)(message)
+      .doOnError(err => this._logger
         .error(`Failed to send a message to channel ${message.channel}: ${err}`)
       );
   }
 }
 
-module.exports = SlackApi;
+module.exports = Bot;

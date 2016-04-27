@@ -6,7 +6,7 @@ class AwesomeIosScraper extends AwesomeListBaseScraper {
   constructor() {
     super();
 
-    this._url = 'https://github.com/vsouza/awesome-ios';
+    this.url = 'https://github.com/vsouza/awesome-ios';
     this._categoriesListSelector = 'li > a[href="#libraries-and-frameworks"]';
   }
 

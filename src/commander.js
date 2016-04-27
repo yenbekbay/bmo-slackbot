@@ -1,7 +1,8 @@
 'use strict';
 
-const Rx = require('rx-lite');
 const clark = require('clark');
+const Rx = require('rx-lite');
+const stringify = require('json-stringify-safe');
 const yargsParser = require('yargs-parser');
 
 const Brain = require('./brain');
@@ -34,18 +35,17 @@ const adventureTimeGifs = [
 ];
 
 class Commander {
-  constructor(bot, slackApi, logger) {
-    this.bot = bot;
-    this.slackApi = slackApi;
-
-    this.logger = logger;
-    this.brain = new Brain(
+  constructor(config) {
+    this._bot = config.bot;
+    this._logger = config.logger;
+    this._brain = new Brain(
       Redis.createClient({ port: redisPort }),
       new Logger(logLevel, ['redis'])
     );
-
-    this.libraryEngine = new LibraryEngine(new Logger(logLevel, ['libraries']));
-    this.trendingEngine = new TrendingEngine(
+    this._libraryEngine = new LibraryEngine(
+      new Logger(logLevel, ['libraries'])
+    );
+    this._trendingEngine = new TrendingEngine(
       githubClientId,
       githubClientSecret,
       new Logger(logLevel, ['trending'])
@@ -57,7 +57,7 @@ class Commander {
           const greeting = `@${options.user.name}: ` +
             greetings[Math.floor(Math.random() * greetings.length)];
 
-          return this.slackApi.sayMessage({
+          return this._bot.sayMessage({
             channel: options.channel.id,
             text: greeting
           });
@@ -69,7 +69,7 @@ class Commander {
           const index = Math.floor(Math.random() * adventureTimeGifs.length);
           const gif = adventureTimeGifs[index];
 
-          return this.slackApi.sayMessage({
+          return this._bot.sayMessage({
             channel: options.channel.id,
             text: 'Adventure time!',
             attachments: [{
@@ -90,7 +90,7 @@ class Commander {
             'Ссылки на твой блог и/или профиль в Гитхабе'
           ].map(question => `- ${question}`).join('\n');
 
-          return this.slackApi.sayMessage({
+          return this._bot.sayMessage({
             channel: options.channel.id,
             text: `Добро пожаловать, @${options.user.name}! Не мог бы ты ` +
               `вкратце рассказать о себе?\n${questions}`
@@ -100,14 +100,14 @@ class Commander {
       },
       getLibraryCategories: {
         validate: options => !!options.platform,
-        actions: options => this.libraryEngine
+        actions: options => this._libraryEngine
           .getCategories(options.platform)
           .flatMap(categoriesTree => {
             const formattedPlatform = LibraryEngine
               .formattedPlatform(options.platform);
             const pretext = `Library categories for ${formattedPlatform}:`;
 
-            return this.slackApi.sayMessage({
+            return this._bot.sayMessage({
               channel: options.channel.id,
               text: `${pretext}\n\`\`\`\n${categoriesTree}\n\`\`\``,
               mrkdwn: true
@@ -121,7 +121,7 @@ class Commander {
           const queryArgs = yargsParser(options.query);
           const queryText = queryArgs._.join(' ');
 
-          return this.libraryEngine
+          return this._libraryEngine
             .getLibrariesForQuery(options.platform, queryText)
             .flatMap(libraries => {
               let message = {
@@ -148,7 +148,7 @@ class Commander {
                 });
               }
 
-              return this.slackApi.sayMessage(message);
+              return this._bot.sayMessage(message);
             });
         },
         description: 'Getting libraries'
@@ -159,7 +159,7 @@ class Commander {
             options.language = options.language.toLowerCase();
           }
 
-          return this.trendingEngine
+          return this._trendingEngine
             .getTrendingRepos(options.language)
             .flatMap(repos => {
               let message = {
@@ -198,7 +198,7 @@ class Commander {
                 });
               }
 
-              return this.slackApi.sayMessage(message);
+              return this._bot.sayMessage(message);
             });
         },
         description: 'Getting trending repos'
@@ -213,11 +213,12 @@ class Commander {
           } else if (options.votedUser.name) {
             getVotedUser = this._findUser(options.votedUser.name);
           } else {
-            getVotedUser = this.brain.getLastVotedUser(options.channel.id);
+            getVotedUser = this._brain.getLastVotedUser(options.channel.id);
           }
 
           return getVotedUser
             .flatMap(votedUser => {
+              this._logger.info(votedUser);
               const vote = this.constructor._parseVote({
                 votingUser: options.user,
                 votedUser: votedUser,
@@ -225,7 +226,7 @@ class Commander {
               });
 
               return this
-                .slackApi.sayMessage({
+                ._bot.sayMessage({
                   channel: options.channel.id,
                   text: vote.message
                 })
@@ -236,7 +237,7 @@ class Commander {
                 }))
                 .doOnNext(scores => {
                   const direction = options.operator === '++' ? 'up' : 'down';
-                  this.logger.info(`User ${options.user.name} ` +
+                  this._logger.info(`User ${options.user.name} ` +
                     `${direction}voted user ${votedUser.name}`);
                 });
             });
@@ -254,9 +255,9 @@ class Commander {
             getUser = this._findUser(options.requestedUser.name);
           }
 
-          return getUser.flatMap(user => this.brain
+          return getUser.flatMap(user => this._brain
             .getUserScore(user.id)
-            .flatMap(score => this.slackApi.sayMessage({
+            .flatMap(score => this._bot.sayMessage({
               channel: options.channel.id,
               text: `@${user.name}: your score is: ${score}`
             }))
@@ -267,7 +268,7 @@ class Commander {
       leaderboard: {
         actions: options => this
           ._getUserScores()
-          .flatMap(scores => this.slackApi.sayMessage({
+          .flatMap(scores => this._bot.sayMessage({
             channel: options.channel.id,
             text: scores,
             mrkdwn: true
@@ -321,12 +322,12 @@ class Commander {
           message += `in channel ${channelName}`;
         }
 
-        this.logger.info(message);
+        this._logger.info(message);
       })
       .flatMap(options => command.actions(options))
       .catch(err => {
-        this.logger.error(`Failed to process command ${commandName}: ${err}`);
-        return this.slackApi.sayError(options.channelId);
+        this._logger.error(`Failed to process command ${commandName}: ${err}`);
+        return this._bot.sayError(options.channelId);
       })
       .subscribe();
   }
@@ -336,7 +337,7 @@ class Commander {
       return null;
     }
 
-    return this.brain
+    return this._brain
       .getUser(userId)
       .flatMap(user => {
         if (user) {
@@ -353,7 +354,7 @@ class Commander {
       return null;
     }
 
-    return this.brain
+    return this._brain
       .getUsers()
       .map(users => users.find(user => user.name === username))
       .flatMap(user => {
@@ -367,7 +368,7 @@ class Commander {
   }
 
   _updateUsers() {
-    return this.slackApi
+    return this._bot
       .getUsers()
       .map(users => users.map(rawUser => {
         const user = {
@@ -388,7 +389,7 @@ class Commander {
 
         return user;
       }))
-      .flatMap(users => this.brain.saveUsers(users));
+      .flatMap(users => this._brain.saveUsers(users));
   }
 
   _getChannel(channelId) {
@@ -408,7 +409,7 @@ class Commander {
       });
     }
 
-    return this.brain
+    return this._brain
       .getChannel(channelId)
       .flatMap(channel => {
         if (channel) {
@@ -422,7 +423,7 @@ class Commander {
   }
 
   _updateChannels() {
-    return this.slackApi
+    return this._bot
       .getChannels()
       .map(channels => channels.map(channel => {
         return {
@@ -430,14 +431,14 @@ class Commander {
           name: channel.name
         };
       }))
-      .flatMap(channels => this.brain.saveChannels(channels));
+      .flatMap(channels => this._brain.saveChannels(channels));
   }
 
   _getUserScores() {
     return Rx.Observable
       .zip(
-        this.brain.getUserScores(),
-        this.brain.getUsers(),
+        this._brain.getUserScores(),
+        this._brain.getUsers(),
         (scores, users) => {
           return { scores: scores, users: users };
         }
@@ -487,23 +488,23 @@ class Commander {
 
   _updateUserScore(scoreInfo) {
     if (!scoreInfo.channel || !scoreInfo.userId) {
-      throw new Error('Invalid score information');
+      throw new Error(`Invalid score information: ${stringify(scoreInfo)}`);
     }
 
     if (!scoreInfo.points) {
       return Rx.Observable.empty();
     }
 
-    return this.brain
+    return this._brain
       .setLastVotedUser(scoreInfo.channel, scoreInfo.userId)
-      .flatMap(lastVotedUser => this.brain
+      .flatMap(lastVotedUser => this._brain
         .incrementUserScore(scoreInfo.userId, scoreInfo.points)
       );
   }
 
   static _parseVote(voteInfo) {
     if (!voteInfo.votingUser && !voteInfo.votedUser) {
-      throw new Error('Invalid vote information');
+      throw new Error(`Invalid vote information: ${stringify(voteInfo)}`);
     } else if (voteInfo.votingUser && !voteInfo.votedUser) {
       return {
         message: 'Please specify the username',

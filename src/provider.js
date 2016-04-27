@@ -5,7 +5,7 @@ const Rx = require('rx-lite');
 
 class Provider {
   constructor() {
-    this.request = request.defaults({
+    this._request = request.defaults({
       headers: { 'User-Agent': 'bmo-slackbot' },
       gzip: true
     });
@@ -14,7 +14,7 @@ class Provider {
 
   requestWithUrl(url) {
     const observable = Rx.Observable
-      .fromNodeCallback(this.request)(url)
+      .fromNodeCallback(this._request)(url)
       .map(result => {
         const response = result[0];
         const body = result[1];

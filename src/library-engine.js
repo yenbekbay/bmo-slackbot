@@ -12,8 +12,8 @@ const AwesomeAndroidScraper =
 
 class LibraryEngine {
   constructor(logger) {
-    this.logger = logger;
-    this.awesomeListScrapers = {
+    this._logger = logger;
+    this._awesomeListScrapers = {
       ios: [
         new AwesomeIosScraper(),
         new AwesomeSwiftScraper()
@@ -25,7 +25,7 @@ class LibraryEngine {
   }
 
   getLibrariesForQuery(platform, query) {
-    const scrapers = this.awesomeListScrapers[platform];
+    const scrapers = this._awesomeListScrapers[platform];
 
     return Rx.Observable
       .merge(scrapers.map(scraper => scraper.getLibrariesForQuery(query)))
@@ -48,16 +48,16 @@ class LibraryEngine {
           return 0;
         })
       )
-      .doOnError(err => this.logger
+      .doOnError(err => this._logger
         .error(`Failed to get ${platform} libraries for "${query}": ${err}`)
       )
-      .doOnNext(libraries => this.logger
+      .doOnNext(libraries => this._logger
         .info(`Got ${libraries.length} ${platform} libraries for "${query}"`)
       );
   }
 
   getCategories(platform) {
-    const scrapers = this.awesomeListScrapers[platform];
+    const scrapers = this._awesomeListScrapers[platform];
 
     return Rx.Observable
       .merge(scrapers.map(scraper => scraper.getCategories()))
@@ -89,10 +89,10 @@ class LibraryEngine {
         ))
         .map(category => '*'.repeat(category.depth) + category.title)
       )
-      .doOnError(err => this.logger.error(
+      .doOnError(err => this._logger.error(
         `Failed to get list of library categories for ${platform}: ${err}`
       ))
-      .doOnNext(categories => this.logger
+      .doOnNext(categories => this._logger
         .info(`Got ${categories.length} library categories for ${platform}`)
       )
       .map(categoriesTree => asciiTree.generate(categoriesTree.join('\r\n')));

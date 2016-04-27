@@ -5,8 +5,8 @@ const stringify = require('json-stringify-safe');
 
 class Brain {
   constructor(redisClient, logger) {
-    this.redisClient = redisClient;
-    this.logger = logger;
+    this._redisClient = redisClient;
+    this._logger = logger;
   }
 
   getUsers() {
@@ -40,10 +40,10 @@ class Brain {
         ? this.getUser(userId)
         : Rx.Observable.return(null)
       )
-      .doOnError(err => this.logger
+      .doOnError(err => this._logger
         .error(`Failed to get last voted user for channel ${channelId}: ${err}`)
       )
-      .doOnNext(userId => this.logger
+      .doOnNext(userId => this._logger
         .debug(`Found last voted user for channel ${channelId}: ${userId}`)
       );
   }
@@ -51,10 +51,10 @@ class Brain {
   setLastVotedUser(channelId, userId) {
     return this
       ._runCommand('hset', 'last_voted_users', channelId, userId)
-      .doOnError(err => this.logger
+      .doOnError(err => this._logger
         .error(`Failed to set last voted user for channel ${channelId}: ${err}`)
       )
-      .doOnNext(created => this.logger
+      .doOnNext(created => this._logger
         .debug(`Updated last voted user for channel ${channelId}: ${userId}`)
       );
   }
@@ -63,10 +63,10 @@ class Brain {
     return this
       ._runCommand('hget', 'user_scores', userId)
       .map(score => score || 0)
-      .doOnError(err => this.logger
+      .doOnError(err => this._logger
         .error(`Failed to get score for user ${userId}: ${err}`)
       )
-      .doOnNext(score => this.logger
+      .doOnNext(score => this._logger
         .debug(`Found score for user ${userId}: ${score}`)
       );
   }
@@ -74,10 +74,10 @@ class Brain {
   getUserScores() {
     return this
       ._runCommand('hgetall', 'user_scores')
-      .doOnError(err => this.logger
+      .doOnError(err => this._logger
         .error(`Failed to get user scores: ${err}`)
       )
-      .doOnNext(scores => this.logger
+      .doOnNext(scores => this._logger
         .debug(scores
           ? `Found user scores: ${stringify(scores)}`
           : 'Found no user scores'
@@ -88,10 +88,10 @@ class Brain {
   incrementUserScore(userId, points) {
     return this
       ._runCommand('hincrby', 'user_scores', userId, points)
-      .doOnError(err => this.logger
+      .doOnError(err => this._logger
         .error(`Failed to increment score for user ${userId}: ${err}`)
       )
-      .doOnNext(score => this.logger
+      .doOnNext(score => this._logger
         .debug(`Incremented score for user ${userId} by ${points}: ${score}`)
       );
   }
@@ -100,8 +100,8 @@ class Brain {
     return this
       ._runCommand('keys', `${key}_*`)
       .flatMap(keys => this._runBatch(keys.map(key => ['hgetall', key])))
-      .doOnError(err => this.logger.error(`Failed to get ${key}s: ${err}`))
-      .doOnNext(objects => this.logger
+      .doOnError(err => this._logger.error(`Failed to get ${key}s: ${err}`))
+      .doOnNext(objects => this._logger
         .debug(`Found ${objects.length} ${key}s`)
       );
   }
@@ -111,8 +111,8 @@ class Brain {
       ._runBatch(objects
         .map(object => ['hmset', `${key}_${object.id}`, object])
       )
-      .doOnError(err => this.logger.error(`Failed to save ${key}s: ${err}`))
-      .doOnNext(objects => this.logger
+      .doOnError(err => this._logger.error(`Failed to save ${key}s: ${err}`))
+      .doOnNext(objects => this._logger
         .debug(`Saved ${objects.length} ${key}s`)
       );
   }
@@ -120,10 +120,10 @@ class Brain {
   _getObject(key, objectId) {
     return this
       ._runCommand('hgetall', `${key}_${objectId}`)
-      .doOnError(err => this.logger
+      .doOnError(err => this._logger
         .error(`Failed to get ${key} for id ${objectId}: ${err}`)
       )
-      .doOnNext(object => this.logger
+      .doOnNext(object => this._logger
         .debug(object
           ? `Found ${key} for id ${objectId}: ${stringify(object)}`
           : `Found no ${key} for id ${objectId}`
@@ -134,13 +134,13 @@ class Brain {
   _runCommand() {
     const args = Array.prototype.slice.call(arguments);
     return Rx.Observable.fromNodeCallback(
-      this.redisClient[args[0]],
-      this.redisClient
+      this._redisClient[args[0]],
+      this._redisClient
     )(...args.slice(1));
   }
 
   _runBatch(commands) {
-    const batch = this.redisClient.batch(commands);
+    const batch = this._redisClient.batch(commands);
     return Rx.Observable.fromNodeCallback(batch.exec, batch)();
   }
 }

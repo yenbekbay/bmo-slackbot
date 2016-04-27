@@ -8,12 +8,12 @@ const Provider = require('../provider');
 
 class AwesomeListBaseScraper {
   constructor() {
-    this.provider = new Provider();
+    this._provider = new Provider();
   }
 
   getLibrariesForQuery(query) {
-    return this.provider
-      .requestWithUrl(this._url)
+    return this._provider
+      .requestWithUrl(this.url)
       .flatMap(body => {
         const $ = cheerio.load(body);
 
@@ -24,8 +24,8 @@ class AwesomeListBaseScraper {
   }
 
   getCategories() {
-    return this.provider
-      .requestWithUrl(this._url)
+    return this._provider
+      .requestWithUrl(this.url)
       .map(body => this._parseCategories(cheerio.load(body)));
   }
 
