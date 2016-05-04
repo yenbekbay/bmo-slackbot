@@ -7,16 +7,11 @@ const Ecosystem = require('./ecosystem.json');
 
 const appName = Ecosystem.apps[0].name;
 
-const host = process.env.REMOTE_HOST;
-const user = process.env.REMOTE_USER;
-const agent = process.env.SSH_AUTH_SOCK;
-const privateKey = process.env.PRIVATE_KEY;
-
 plan.target('production', [{
-  host: host,
-  username: user,
-  agent: agent,
-  privateKey: privateKey
+  host: process.env.REMOTE_HOST,
+  username: process.env.REMOTE_USER,
+  agent: process.env.SSH_AUTH_SOCK,
+  privateKey: process.env.PRIVATE_KEY
 }]);
 
 const tmpDir = `/tmp/${appName}-${new Date().getTime()}`;

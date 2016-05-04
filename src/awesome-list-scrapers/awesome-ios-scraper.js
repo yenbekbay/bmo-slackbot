@@ -18,9 +18,10 @@ class AwesomeIosScraper extends AwesomeListBaseScraper {
     if (emojiNode.get().length > 0) {
       swift = emojiNode.attr('title') === ':large_orange_diamond:';
     }
+
     return {
-      link: anchorNode.attr('href'),
       title: title + (swift ? ' 🔶' : ''),
+      link: anchorNode.attr('href'),
       description: $(libraryNode).text().replace(`${title} - `, '').trim(),
       swift: swift
     };

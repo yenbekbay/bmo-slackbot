@@ -64,7 +64,7 @@ class TrendingEngine {
             .filter(repo => (repo.language || '').toLowerCase() === language);
         }
 
-        repos = repos
+        return repos
           .map(repo => {
             repo.link = `${githubUrl}/${repo.name}`;
             return repo;
@@ -72,22 +72,23 @@ class TrendingEngine {
           .sort((a, b) => {
             if (a.trend < b.trend) {
               return 1;
-            }
-            if (a.trend > b.trend) {
+            } else if (a.trend > b.trend) {
               return -1;
+            } else {
+              return 0;
             }
-            return 0;
           });
-
-        return repos;
       })
-      .doOnError(err => this._logger.error(
-        'Failed to get trending repos for ' +
-        `${language || 'all languages'}: ${err}`
-      ))
-      .doOnNext(repos => this._logger.info(
-        `Got ${repos.length} trending repos for ${language || 'all languages'}`
-      ));
+      .do(
+        repos => {
+          this._logger.info(`Got ${repos.length} trending repos for ` +
+            `${language || 'all languages'}`);
+        },
+        err => {
+          this._logger.error('Failed to get trending repos for ' +
+            `${language || 'all languages'}: ${err.message}`);
+        }
+      );
   }
 }
 

@@ -20,11 +20,13 @@ class Bot {
     return Rx.Observable
       .fromNodeCallback(this._bot.api.users.list)({})
       .map(response => (response || {}).members)
-      .doOnError(err => this._logger
-        .error(`Failed to get users on the team: ${err}`)
-      )
-      .doOnNext(users => this._logger
-        .debug(`Got ${(users || []).length} users on the team`)
+      .do(
+        users => {
+          this._logger.debug(`Got ${(users || []).length} users on the team`);
+        },
+        err => {
+          this._logger.error(`Failed to get users on the team: ${err}`);
+        }
       );
   }
 
@@ -32,11 +34,14 @@ class Bot {
     return Rx.Observable
       .fromNodeCallback(this._bot.api.channels.list)({})
       .map(response => (response || {}).channels)
-      .doOnError(err => this._logger
-        .error(`Failed to get channels on the team: ${err}`)
-      )
-      .doOnNext(channels => this._logger
-        .debug(`Got ${(channels || []).length} channels on the team`)
+      .do(
+        channels => {
+          this._logger.debug(`Got ${(channels || []).length} channels on ' +
+            'the team`);
+        },
+        err => {
+          this._logger.error(`Failed to get channels on the team: ${err}`);
+        }
       );
   }
 

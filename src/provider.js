@@ -15,22 +15,19 @@ class Provider {
   requestWithUrl(url) {
     const observable = Rx.Observable
       .fromNodeCallback(this._request)(url)
-      .map(result => {
-        const response = result[0];
-        const body = result[1];
-
+      .map(([response, body]) => {
         if (response.statusCode === 200) {
           return body;
         } else {
           throw new Error(`Status code ${response.statusCode}`);
         }
       })
-      .catch(err => {
-        return Rx.Observable
-          .throw(new Error(`${url} can't be reached: ${err.message}`));
-      });
+      .catch(err => Rx.Observable
+        .throw(new Error(`${url} can't be reached: ${err.message}`))
+      );
 
     let errorCount = 0;
+
     return observable
       .catch(err => {
         errorCount++;

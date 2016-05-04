@@ -40,22 +40,32 @@ class Brain {
         ? this.getUser(userId)
         : Rx.Observable.return(null)
       )
-      .doOnError(err => this._logger
-        .error(`Failed to get last voted user for channel ${channelId}: ${err}`)
-      )
-      .doOnNext(userId => this._logger
-        .debug(`Found last voted user for channel ${channelId}: ${userId}`)
+      .do(
+        userId => {
+          this._logger.debug(`Found last voted user for channel ' +
+            '${channelId}: ${userId}`);
+        },
+        err => {
+          this._logger
+            .error(`Failed to get last voted user for channel ${channelId}: ` +
+              err.message);
+        }
       );
   }
 
   setLastVotedUser(channelId, userId) {
     return this
       ._runCommand('hset', 'last_voted_users', channelId, userId)
-      .doOnError(err => this._logger
-        .error(`Failed to set last voted user for channel ${channelId}: ${err}`)
-      )
-      .doOnNext(created => this._logger
-        .debug(`Updated last voted user for channel ${channelId}: ${userId}`)
+      .do(
+        created => {
+          this._logger.debug('Updated last voted user for channel ' +
+            `${channelId}: ${userId}`);
+        },
+        err => {
+          this._logger
+            .error(`Failed to set last voted user for channel ${channelId}: ` +
+              err.message);
+        }
       );
   }
 
@@ -63,36 +73,44 @@ class Brain {
     return this
       ._runCommand('hget', 'user_scores', userId)
       .map(score => score || 0)
-      .doOnError(err => this._logger
-        .error(`Failed to get score for user ${userId}: ${err}`)
-      )
-      .doOnNext(score => this._logger
-        .debug(`Found score for user ${userId}: ${score}`)
+      .do(
+        score => {
+          this._logger.debug(`Found score for user ${userId}: ${score}`);
+        },
+        err => {
+          this._logger.error(`Failed to get score for user ${userId}: ${err}`);
+        }
       );
   }
 
   getUserScores() {
     return this
       ._runCommand('hgetall', 'user_scores')
-      .doOnError(err => this._logger
-        .error(`Failed to get user scores: ${err}`)
-      )
-      .doOnNext(scores => this._logger
-        .debug(scores
-          ? `Found user scores: ${stringify(scores)}`
-          : 'Found no user scores'
-        )
+      .do(
+        scores => {
+          this._logger.debug(scores
+            ? `Found user scores: ${stringify(scores)}`
+            : 'Found no user scores'
+          );
+        },
+        err => {
+          this._logger.error(`Failed to get user scores: ${err.message}`);
+        }
       );
   }
 
   incrementUserScore(userId, points) {
     return this
       ._runCommand('hincrby', 'user_scores', userId, points)
-      .doOnError(err => this._logger
-        .error(`Failed to increment score for user ${userId}: ${err}`)
-      )
-      .doOnNext(score => this._logger
-        .debug(`Incremented score for user ${userId} by ${points}: ${score}`)
+      .do(
+        score => {
+          this._logger.debug(`Incremented score for user ${userId} by ` +
+            `${points}: ${score}`);
+        },
+        err => {
+          this._logger.error(`Failed to increment score for user ${userId}: ` +
+            err.message);
+        }
       );
   }
 
@@ -100,9 +118,13 @@ class Brain {
     return this
       ._runCommand('keys', `${key}_*`)
       .flatMap(keys => this._runBatch(keys.map(key => ['hgetall', key])))
-      .doOnError(err => this._logger.error(`Failed to get ${key}s: ${err}`))
-      .doOnNext(objects => this._logger
-        .debug(`Found ${objects.length} ${key}s`)
+      .do(
+        objects => {
+          this._logger.debug(`Found ${objects.length} ${key}s`);
+        },
+        err => {
+          this._logger.error(`Failed to get ${key}s: ${err.message}`);
+        }
       );
   }
 
@@ -111,23 +133,29 @@ class Brain {
       ._runBatch(objects
         .map(object => ['hmset', `${key}_${object.id}`, object])
       )
-      .doOnError(err => this._logger.error(`Failed to save ${key}s: ${err}`))
-      .doOnNext(objects => this._logger
-        .debug(`Saved ${objects.length} ${key}s`)
+      .do(
+        objects => {
+          this._logger.debug(`Saved ${objects.length} ${key}s`);
+        },
+        err => {
+          this._logger.error(`Failed to save ${key}s: ${err.message}`);
+        }
       );
   }
 
   _getObject(key, objectId) {
     return this
       ._runCommand('hgetall', `${key}_${objectId}`)
-      .doOnError(err => this._logger
-        .error(`Failed to get ${key} for id ${objectId}: ${err}`)
-      )
-      .doOnNext(object => this._logger
-        .debug(object
-          ? `Found ${key} for id ${objectId}: ${stringify(object)}`
-          : `Found no ${key} for id ${objectId}`
-        )
+      .do(
+        object => {
+          this._logger.debug(object
+            ? `Found ${key} for id ${objectId}: ${stringify(object)}`
+            : `Found no ${key} for id ${objectId}`
+          );
+        },
+        err => {
+          this._logger.error(`Failed to get ${key} for id ${objectId}: ${err}`);
+        }
       );
   }
 

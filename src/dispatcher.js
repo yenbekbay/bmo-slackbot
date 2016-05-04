@@ -326,6 +326,7 @@ class Dispatcher {
       .flatMap(options => command.actions(options))
       .catch(err => {
         this._logger.error(`Failed to process command ${commandName}: ${err}`);
+
         return this._bot.sayError(options.channelId);
       })
       .subscribe();
@@ -424,12 +425,10 @@ class Dispatcher {
   _updateChannels() {
     return this._bot
       .getChannels()
-      .map(channels => channels.map(channel => {
-        return {
-          id: channel.id,
-          name: channel.name
-        };
-      }))
+      .map(channels => channels.map(channel => ({
+        id: channel.id,
+        name: channel.name
+      })))
       .flatMap(channels => this._brain.saveChannels(channels));
   }
 

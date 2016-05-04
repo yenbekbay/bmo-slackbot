@@ -20,7 +20,7 @@ class MockAwesomeListScraper {
   getLibrariesForQuery() {
     return Rx.Observable.create(observer => {
       const number = chance.natural({ min: 2, max: 10 });
-      const libraries = new Array(number).fill().map(_ => {
+      const libraries = new Array(number).fill().map(() => {
         const title = chance.word({ syllables: 4 });
         const library = {
           platform: this.platform,

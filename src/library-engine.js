@@ -41,18 +41,22 @@ class LibraryEngine {
         .sort((a, b) => {
           if (a.title > b.title) {
             return 1;
-          }
-          if (a.title < b.title) {
+          } else if (a.title < b.title) {
             return -1;
+          } else {
+            return 0;
           }
-          return 0;
         })
       )
-      .doOnError(err => this._logger
-        .error(`Failed to get ${platform} libraries for "${query}": ${err}`)
-      )
-      .doOnNext(libraries => this._logger
-        .info(`Got ${libraries.length} ${platform} libraries for "${query}"`)
+      .do(
+        libraries => {
+          this._logger.info(`Got ${libraries.length} ${platform} libraries ` +
+            `for "${query}"`);
+        },
+        err => {
+          this._logger.error(`Failed to get ${platform} libraries for ` +
+            `"${query}": ${err.message}`);
+        }
       );
   }
 
@@ -61,7 +65,8 @@ class LibraryEngine {
 
     return Rx.Observable
       .merge(scrapers.map(scraper => scraper.getCategories()))
-      .toArray().map(categories => categories
+      .toArray()
+      .map(categories => categories
         .reduce((a, b) => a.concat(b))
         .reduce((categories, category) => {
           const slugs = categories.map(category => category.slug);
@@ -72,11 +77,11 @@ class LibraryEngine {
         .sort((a, b) => {
           if (a.title > b.title) {
             return 1;
-          }
-          if (a.title < b.title) {
+          } else if (a.title < b.title) {
             return -1;
+          } else {
+            return 0;
           }
-          return 0;
         })
       )
       .map(categories => this.constructor
@@ -89,11 +94,15 @@ class LibraryEngine {
         ))
         .map(category => '*'.repeat(category.depth) + category.title)
       )
-      .doOnError(err => this._logger.error(
-        `Failed to get list of library categories for ${platform}: ${err}`
-      ))
-      .doOnNext(categories => this._logger
-        .info(`Got ${categories.length} library categories for ${platform}`)
+      .do(
+        categories => {
+          this._logger.info(`Got ${categories.length} library categories for ` +
+            `${platform}`);
+        },
+        err => {
+          this._logger.error('Failed to get list of library categories for ' +
+            `${platform}: ${err.message}`);
+        }
       )
       .map(categoriesTree => asciiTree.generate(categoriesTree.join('\r\n')));
   }

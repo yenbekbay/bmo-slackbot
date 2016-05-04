@@ -31,12 +31,16 @@ class AwesomeListBaseScraper {
 
   _parseCategories($) {
     const categoriesListNode = $(this._categoriesListSelector).next('ul');
+
     return this.constructor._categoriesForList($, categoriesListNode);
   }
 
   _parseLibraries($, category) {
-    const librariesListNode = $(`#user-content-${category.slug}`).parent()
-      .nextAll('ul').first();
+    const librariesListNode = $(`#user-content-${category.slug}`)
+      .parent()
+      .nextAll('ul')
+      .first();
+
     return this.constructor._librariesForList($, librariesListNode);
   }
 
@@ -53,6 +57,7 @@ class AwesomeListBaseScraper {
         if (sublistNode.get().length > 0) {
           category.subcategories = this._categoriesForList($, sublistNode);
         }
+
         return category;
       })
       .get();
@@ -77,12 +82,7 @@ class AwesomeListBaseScraper {
 
     return Rx.Observable
       .fromCallback(nn.findMostSimilar)({ title: query }, items, fields)
-      .map(result => {
-        const category = result[0];
-        const probability = result[1];
-
-        return probability > 0.75 ? category : null;
-      });
+      .map(({ category, probability }) => probability > 0.75 ? category : null);
   }
 
   static _librariesForList($, listNode) {
@@ -95,9 +95,10 @@ class AwesomeListBaseScraper {
   static _parseLibrary($, libraryNode) {
     const anchorNode = $(libraryNode).find('> a');
     const title = anchorNode.text();
+
     return {
+      title,
       link: anchorNode.attr('href'),
-      title: title,
       description: $(libraryNode).text().replace(`${title} - `, '').trim()
     };
   }
