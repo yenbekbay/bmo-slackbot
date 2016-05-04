@@ -1,5 +1,6 @@
 'use strict';
 
+const { expect } = require('code');
 const Rx = require('rx-lite');
 const stringify = require('json-stringify-safe');
 
@@ -34,6 +35,8 @@ class Brain {
   }
 
   getLastVotedUser(channelId) {
+    expect(channelId).to.be.a.string();
+
     return this
       ._runCommand('hget', 'last_voted_users', channelId)
       .flatMap(userId => userId
@@ -54,6 +57,9 @@ class Brain {
   }
 
   setLastVotedUser(channelId, userId) {
+    expect(channelId).to.be.a.string();
+    expect(userId).to.be.a.string();
+
     return this
       ._runCommand('hset', 'last_voted_users', channelId, userId)
       .do(
@@ -70,6 +76,8 @@ class Brain {
   }
 
   getUserScore(userId) {
+    expect(userId).to.be.a.string();
+
     return this
       ._runCommand('hget', 'user_scores', userId)
       .map(score => score || 0)
@@ -100,6 +108,9 @@ class Brain {
   }
 
   incrementUserScore(userId, points) {
+    expect(userId).to.be.a.string();
+    expect(points).to.be.a.number().and.to.be.above(0);
+
     return this
       ._runCommand('hincrby', 'user_scores', userId, points)
       .do(
@@ -115,6 +126,8 @@ class Brain {
   }
 
   _getObjects(key) {
+    expect(key).to.exist();
+
     return this
       ._runCommand('keys', `${key}_*`)
       .flatMap(keys => this._runBatch(keys.map(key => ['hgetall', key])))
@@ -129,6 +142,10 @@ class Brain {
   }
 
   _saveObjects(key, objects) {
+    expect(key).to.be.a.string();
+    expect(objects).to.be.an.array();
+    expect(objects.length).to.be.above(0);
+
     return this
       ._runBatch(objects
         .map(object => ['hmset', `${key}_${object.id}`, object])
@@ -144,6 +161,9 @@ class Brain {
   }
 
   _getObject(key, objectId) {
+    expect(key).to.be.a.string();
+    expect(objectId).to.be.a.string();
+
     return this
       ._runCommand('hgetall', `${key}_${objectId}`)
       .do(

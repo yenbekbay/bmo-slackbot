@@ -1,5 +1,6 @@
 'use strict';
 
+const { expect } = require('code');
 const clark = require('clark');
 const Rx = require('rx-lite');
 const stringify = require('json-stringify-safe');

@@ -1,5 +1,6 @@
 'use strict';
 
+const { expect } = require('code');
 const Rx = require('rx-lite');
 
 class Bot {
@@ -53,9 +54,7 @@ class Bot {
   }
 
   sayMessage(message) {
-    if (!message || !message.text || !message.channel) {
-      return Rx.Observable.empty();
-    }
+    expect(message).to.be.an.object.and.to.include(['text', 'channel']);
 
     return Rx.Observable
       .fromNodeCallback(this._bot.say)(message)
