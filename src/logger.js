@@ -11,7 +11,21 @@ const LEVELS = {
 
 class Logger {
   constructor(level, tags) {
-    this.level = (level === undefined || level === null) ? LEVELS.INFO : level;
+    switch (level) {
+      case 'debug':
+        this.level = LEVELS.DEBUG;
+        break;
+      case 'warn':
+        this.level = LEVELS.WARN;
+        break;
+      case 'error':
+        this.level = LEVELS.ERROR;
+        break;
+      default:
+        this.level = LEVELS.INFO;
+        break;
+    }
+
     this.tags = tags || [];
   }
 
@@ -78,7 +92,4 @@ class Logger {
   }
 }
 
-module.exports = {
-  Logger: Logger,
-  logLevels: LEVELS
-};
+module.exports = Logger;

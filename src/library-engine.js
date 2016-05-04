@@ -11,7 +11,7 @@ const AwesomeAndroidScraper =
   require('./awesome-list-scrapers/awesome-android-scraper');
 
 class LibraryEngine {
-  constructor(logger) {
+  constructor({ logger }) {
     this._logger = logger;
     this._awesomeListScrapers = {
       ios: [

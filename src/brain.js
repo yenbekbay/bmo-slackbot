@@ -5,7 +5,7 @@ const Rx = require('rx-lite');
 const stringify = require('json-stringify-safe');
 
 class Brain {
-  constructor(redisClient, logger) {
+  constructor({ redisClient, logger }) {
     this._redisClient = redisClient;
     this._logger = logger;
   }

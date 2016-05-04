@@ -3,18 +3,16 @@
 const Rx = require('rx-lite');
 const Wit = require('node-wit').Wit;
 
+const Logger = require('./logger');
+
+const logLevel = process.env.NODE_ENV === 'production' ? 'info' : 'debug';
+const witToken = process.env.WIT_TOKEN;
+
 class WitAi {
-  constructor(config) {
-    // This will contain all user sessions
-    // Each session has an entry:
-    // sessionId -> {
-    //   channel: messageChannel,
-    //   user: messageUser,
-    //   context: sessionState
-    // }
+  constructor(bot) {
     this._sessions = {};
-    this._bot = config.bot;
-    this._logger = config.logger;
+    this._bot = bot;
+    this._logger = new Logger(logLevel, ['slack-api']);
     const actions = {
       say: (sessionId, context, message, cb) => {
         const session = this._sessions[sessionId] || {};
@@ -30,44 +28,31 @@ class WitAi {
         this._bot.sayError(session.channel, err).subscribe();
       }
     };
-    this._wit = new Wit(config.witToken, actions, this._logger);
+    this._wit = new Wit(witToken, actions, this._logger);
   }
 
-  runActions(message) {
-    const sessionId = this._findOrCreateSession(message);
-    const text = message.match[0];
+  runActions({ text, channelId, userId }) {
+    let sessionId = Object.keys(this._sessions).find(key =>
+      this._sessions[key].channelId === channelId &&
+      this._sessions[key].userId === userId
+    );
+
+    if (!sessionId) {
+      sessionId = new Date().toISOString();
+      this._sessions[sessionId] = {
+        channelId,
+        userId,
+        context: {}
+      };
+    }
+
     const context = this._sessions[sessionId].context;
 
     return Rx.Observable
       .fromNodeCallback(this._wit.runActions)(sessionId, text, context)
       .finally(() => {
         delete this._sessions[sessionId];
-      })
-      .doOnError(err => this._logger
-        .error(`Failed to run wit actions: ${err}`)
-      );
-  }
-
-  _findOrCreateSession(message) {
-    let sessionId;
-    Object.keys(this._sessions).forEach(key => {
-      if (
-        this._sessions[key].channel === message.channel &&
-        this._sessions[key].user === message.user
-      ) {
-        sessionId = key;
-      }
-    });
-    if (!sessionId) {
-      sessionId = new Date().toISOString();
-      this._sessions[sessionId] = {
-        channel: message.channel,
-        user: message.user,
-        context: {}
-      };
-    }
-
-    return sessionId;
+      });
   }
 }
 

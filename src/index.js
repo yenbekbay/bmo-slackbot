@@ -3,41 +3,15 @@
 const Botkit = require('botkit');
 require('dotenv').config();
 
-const Bot = require('./bot');
 const Dispatcher = require('./dispatcher');
-const levels = require('./logger').logLevels;
-const Logger = require('./logger').Logger;
-const WitAi = require('./wit-ai');
+const Logger = require('./logger');
 
-const slackToken = process.env.SLACK_TOKEN;
-const witToken = process.env.WIT_TOKEN;
-const logLevel = process.env.NODE_ENV === 'production'
-  ? levels.INFO
-  : levels.DEBUG;
-
-const logger = new Logger(levels.INFO);
-
-const controller = Botkit.slackbot({
-  logger: new Logger(levels.INFO, ['botkit'])
-});
-const bot = new Bot({
-  controller: controller,
-  slackToken: slackToken,
-  logger: new Logger(logLevel, ['slack-api'])
-});
-const dispatcher = new Dispatcher({
-  bot: bot,
-  logger: logger
-});
-const witAi = new WitAi({
-  bot: bot,
-  witToken: witToken,
-  logger: new Logger(logLevel, ['wit-ai'])
-});
+const controller = Botkit.slackbot({ logger: new Logger('info', ['botkit']) });
+const dispatcher = new Dispatcher(controller);
 
 controller.hears(
   '^(?:hi|hello|whatsup|howdy|greetings|privet|salem)(?:\\s+.*)?$',
-  ['direct_message', 'direct_mention'], (_, message) => dispatcher
+  ['direct_message', 'direct_mention'], (bot, message) => dispatcher
     .runCommand('greet', {
       channelId: message.channel,
       userId: message.user
@@ -46,7 +20,7 @@ controller.hears(
 
 controller.hears(
   '^(ios|android)\\s+lib(?:rarie)?s\\s+list\\s*$',
-  ['direct_message', 'direct_mention'], (_, message) => dispatcher
+  ['direct_message', 'direct_mention'], (bot, message) => dispatcher
     .runCommand('getLibraryCategories', {
       channelId: message.channel,
       userId: message.user,
@@ -56,7 +30,7 @@ controller.hears(
 
 controller.hears(
   '^(ios|android)\\s+lib(?:rarie)?s(?:\\s+for\\s+|\\s+)(.+)\\s*$',
-  ['direct_message', 'direct_mention'], (_, message) => dispatcher
+  ['direct_message', 'direct_mention'], (bot, message) => dispatcher
     .runCommand('getLibraries', {
       channelId: message.channel,
       userId: message.user,
@@ -67,7 +41,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*trending(?:\\s+repos)?(?:$|(?:\\s+for)?\\s+(.+)\\s*$)',
-  ['direct_message', 'direct_mention'], (_, message) => dispatcher
+  ['direct_message', 'direct_mention'], (bot, message) => dispatcher
     .runCommand('getTrendingRepos', {
       channelId: message.channel,
       userId: message.user,
@@ -77,7 +51,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*<@(U.+)>\\s*:?\\s*([-+]{2})\\s*$',
-  ['ambient'], (_, message) => dispatcher
+  ['ambient'], (bot, message) => dispatcher
     .runCommand('vote', {
       channelId: message.channel,
       userId: message.user,
@@ -88,7 +62,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*@?([\\w\\.\\-]*)\\s*:?\\s*([-+]{2})\\s*$',
-  ['ambient'], (_, message) => dispatcher
+  ['ambient'], (bot, message) => dispatcher
     .runCommand('vote', {
       channelId: message.channel,
       userId: message.user,
@@ -97,7 +71,7 @@ controller.hears(
     })
   );
 
-controller.on('reaction_added', (_, message) => dispatcher
+controller.on('reaction_added', (bot, message) => dispatcher
   .runCommand('vote', {
     channelId: message.item.channel,
     userId: message.user,
@@ -110,7 +84,7 @@ controller.on('reaction_added', (_, message) => dispatcher
 
 controller.hears(
   '^\\s*score\\s*$',
-  ['direct_message', 'direct_mention'], (_, message) => dispatcher
+  ['direct_message', 'direct_mention'], (bot, message) => dispatcher
     .runCommand('userScore', {
       channelId: message.channel,
       userId: message.user,
@@ -120,7 +94,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*score\\s+(?:for\\s+)?<@(U.+)>\\s*$',
-  ['ambient', 'direct_message', 'direct_mention'], (_, message) => dispatcher
+  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => dispatcher
     .runCommand('userScore', {
       channelId: message.channel,
       userId: message.user,
@@ -130,7 +104,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*score\\s+(?:for\\s+)?@?(?!.*<)(.*)\\s*$',
-  ['ambient', 'direct_message', 'direct_mention'], (_, message) => dispatcher
+  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => dispatcher
     .runCommand('userScore', {
       channelId: message.channel,
       userId: message.user,
@@ -140,7 +114,7 @@ controller.hears(
 
 controller.hears(
   '^\\s*leaderboard\\s*$',
-  ['ambient', 'direct_message', 'direct_mention'], (_, message) => dispatcher
+  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => dispatcher
     .runCommand('leaderboard', {
       channelId: message.channel,
       userId: message.user
@@ -149,26 +123,26 @@ controller.hears(
 
 controller.hears(
   '^\\s*what\\s+time(\\s+is\\s+it)?\\s*\\??\\s*$',
-  ['ambient', 'direct_message', 'direct_mention'], (_, message) => dispatcher
+  ['ambient', 'direct_message', 'direct_mention'], (bot, message) => dispatcher
     .runCommand('adventureTime', {
       channelId: message.channel,
       userId: message.user
     })
   );
 
-controller.on('user_channel_join', (_, message) => dispatcher
+controller.on('user_channel_join', (bot, message) => dispatcher
   .runCommand('welcome', {
     channelId: message.channel,
     userId: message.user
   })
 );
 
-controller.hears('.*', ['direct_message', 'direct_mention'], (_, message) => {
-  witAi
-    .runActions(message)
-    .catch(_ => bot.sayMessage({
-      channel: message.channel,
-      text: 'Я тебя не понимаю 😔'
-    }))
-    .subscribe();
-});
+controller.hears(
+  '.*',
+  ['direct_message', 'direct_mention'], (bot, message) => dispatcher
+    .runCommand('witAi', {
+      channelId: message.channel,
+      userId: message.user,
+      text: message.match[0]
+    })
+);

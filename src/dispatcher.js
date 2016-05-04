@@ -3,21 +3,20 @@
 const { expect } = require('code');
 const clark = require('clark');
 const Rx = require('rx-lite');
-const stringify = require('json-stringify-safe');
 const yargsParser = require('yargs-parser');
 
+const Bot = require('./bot');
 const Brain = require('./brain');
 const LibraryEngine = require('./library-engine');
-const levels = require('./logger').logLevels;
-const Logger = require('./logger').Logger;
+const Logger = require('./logger');
 const Redis = require('redis');
 const TrendingEngine = require('./trending-engine');
+const WitAi = require('./wit-ai');
 
-const production = process.env.NODE_ENV === 'production';
-const redisPort = production ? process.env.REDIS_PORT : 6379;
-const logLevel = production ? levels.INFO : levels.DEBUG;
-const githubClientId = process.env.GITHUB_CLIENT_ID;
-const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
+const redisPort = process.env.NODE_ENV === 'production'
+  ? process.env.REDIS_PORT
+  : 6379;
+const logLevel = process.env.NODE_ENV === 'production' ? 'info' : 'debug';
 
 const greetings = [
   'Hey there!',
@@ -36,21 +35,20 @@ const adventureTimeGifs = [
 ];
 
 class Dispatcher {
-  constructor(config) {
-    this._bot = config.bot;
-    this._logger = config.logger;
-    this._brain = new Brain(
-      Redis.createClient({ port: redisPort }),
-      new Logger(logLevel, ['redis'])
-    );
-    this._libraryEngine = new LibraryEngine(
-      new Logger(logLevel, ['libraries'])
-    );
-    this._trendingEngine = new TrendingEngine(
-      githubClientId,
-      githubClientSecret,
-      new Logger(logLevel, ['trending'])
-    );
+  constructor(controller) {
+    this._bot = new Bot(controller);
+    this._logger = new Logger(logLevel, ['dispatcher']);
+    this._brain = new Brain({
+      redisClient: Redis.createClient({ port: redisPort }),
+      logger: new Logger(logLevel, ['redis'])
+    });
+    this._libraryEngine = new LibraryEngine({
+      logger: new Logger(logLevel, ['libraries'])
+    });
+    this._trendingEngine = new TrendingEngine({
+      logger: new Logger(logLevel, ['trending'])
+    });
+    this._witAi = new WitAi(this._bot);
 
     this._commands = {
       greet: {
@@ -275,6 +273,10 @@ class Dispatcher {
             mrkdwn: true
           })),
         description: 'Getting leaderboard'
+      },
+      witAi: {
+        actions: options => this._witAi.runActions(options),
+        description: 'Running wit.ai actions'
       }
     };
   }

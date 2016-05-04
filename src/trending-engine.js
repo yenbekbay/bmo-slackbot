@@ -10,10 +10,11 @@ const githubUrl = 'https://github.com';
 const githubApiUrl = 'https://api.github.com';
 const trendingUrl = 'http://app.gitlogs.com/trending';
 
+const githubClientId = process.env.GITHUB_CLIENT_ID;
+const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
+
 class TrendingEngine {
-  constructor(githubClientId, githubClientSecret, logger) {
-    this._githubClientId = githubClientId;
-    this._githubClientSecret = githubClientSecret;
+  constructor({ logger }) {
     this._logger = logger;
     this._provider = new Provider();
   }
@@ -41,8 +42,8 @@ class TrendingEngine {
             return Rx.Observable.return(repo);
           } else {
             const url = `${githubApiUrl}/repos/${repo.name}?` +
-              `client_id=${this._githubClientId}&` +
-              `client_secret=${this._githubClientSecret}`;
+              `client_id=${githubClientId}&` +
+              `client_secret=${githubClientSecret}`;
 
             return this._provider
               .requestWithUrl(url)

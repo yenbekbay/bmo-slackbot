@@ -3,11 +3,16 @@
 const { expect } = require('code');
 const Rx = require('rx-lite');
 
+const Logger = require('./logger');
+
+const logLevel = process.env.NODE_ENV === 'production' ? 'info' : 'debug';
+const slackToken = process.env.SLACK_TOKEN;
+
 class Bot {
-  constructor(config) {
-    this._logger = config.logger;
-    this._bot = config.controller
-      .spawn({ token: config.slackToken })
+  constructor(controller) {
+    this._logger = new Logger(logLevel, ['slack-api']);
+    this._bot = controller
+      .spawn({ token: slackToken })
       .startRTM((err, bot, payload) => {
         if (err) {
           throw new Error(`Error connecting to Slack: ${err}`);
