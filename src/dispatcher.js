@@ -333,7 +333,7 @@ class Dispatcher {
 
   _getUser(userId) {
     if (!userId) {
-      return null;
+      return Rx.Observable.return(null);
     }
 
     return this._brain
@@ -350,7 +350,7 @@ class Dispatcher {
 
   _findUser(username) {
     if (!username) {
-      return null;
+      return Rx.Observable.return(null);
     }
 
     return this._brain
@@ -393,7 +393,7 @@ class Dispatcher {
 
   _getChannel(channelId) {
     if (!channelId) {
-      return null;
+      return Rx.Observable.return(null);
     }
 
     if (channelId.charAt(0) === 'D') {
