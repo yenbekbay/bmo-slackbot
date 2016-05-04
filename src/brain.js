@@ -109,7 +109,7 @@ class Brain {
 
   incrementUserScore(userId, points) {
     expect(userId).to.be.a.string();
-    expect(points).to.be.a.number().and.to.be.above(0);
+    expect(points).to.be.a.number();
 
     return this
       ._runCommand('hincrby', 'user_scores', userId, points)
