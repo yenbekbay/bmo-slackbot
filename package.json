@@ -28,6 +28,7 @@
     "ascii-tree": "^0.3.0",
     "botkit": "^0.1.1",
     "cheerio": "^0.20.0",
+    "code": "^2.2.0",
     "clark": "0.0.6",
     "colors": "^1.1.2",
     "dotenv": "^2.0.0",
@@ -43,7 +44,6 @@
   },
   "devDependencies": {
     "chance": "^1.0.2",
-    "code": "^2.2.0",
     "eslint": "^2.1.0",
     "eslint-config-semistandard": "^6.0.1",
     "eslint-config-standard": "^5.1.0",
