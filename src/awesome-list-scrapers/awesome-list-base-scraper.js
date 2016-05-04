@@ -82,7 +82,7 @@ class AwesomeListBaseScraper {
 
     return Rx.Observable
       .fromCallback(nn.findMostSimilar)({ title: query }, items, fields)
-      .map(([category, probability]) => probability > 0.75 ? category : null);
+      .map(([category, probability]) => probability > 0.6 ? category : null);
   }
 
   static _librariesForList($, listNode) {
