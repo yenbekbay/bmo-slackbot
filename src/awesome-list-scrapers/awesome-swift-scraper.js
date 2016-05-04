@@ -3,8 +3,8 @@
 const AwesomeListBaseScraper = require('./awesome-list-base-scraper');
 
 class AwesomeSwiftScraper extends AwesomeListBaseScraper {
-  constructor() {
-    super();
+  constructor(...args) {
+    super(...args);
 
     this.url = 'https://github.com/matteocrippa/awesome-swift';
     this._categoriesListSelector = 'li > a[href="#libs"]';

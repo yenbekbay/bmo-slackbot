@@ -15,45 +15,23 @@ class Logger {
     this.tags = tags || [];
   }
 
-  error() {
-    const args = Array.prototype.slice.call(arguments);
+  error(...args) {
     this.log('error', ...args);
   }
 
-  warn() {
-    const args = Array.prototype.slice.call(arguments);
+  warn(...args) {
     this.log('warn', ...args);
   }
 
-  debug() {
-    const args = Array.prototype.slice.call(arguments);
+  debug(...args) {
     this.log('debug', ...args);
   }
 
-  info() {
-    const args = Array.prototype.slice.call(arguments);
+  info(...args) {
     this.log('info', ...args);
   }
 
-  log() {
-    let args = Array.prototype.slice.call(arguments);
-    if (args.length === 0) {
-      return;
-    }
-
-    const level = args[0];
-    let tags = this.tags;
-    args = args.slice(1);
-    if (Array.isArray(args[0])) {
-      tags = tags.concat(args[0]);
-      args = args.slice(1);
-    }
-
-    let message = args.join(' ');
-    if (!message) {
-      return;
-    }
-
+  log(level, ...args) {
     switch (level) {
       case 'error':
         if (LEVELS.ERROR < this.level) return;
@@ -69,11 +47,19 @@ class Logger {
         break;
     }
 
-    message = message.replace(/^\*\*\s+/, '');
-    if (tags.length > 0) {
-      message = `[${tags.join(',')}] ${message}`;
+    let tagComps = [];
+    let messageComps = [];
+
+    if (Array.isArray(args[0])) {
+      [tagComps, ...messageComps] = args;
+    } else {
+      [...messageComps] = args;
     }
-    message = `[${level}] ${message}`;
+
+    const tags = this.tags.concat(tagComps);
+    const message = `[${level}] ` +
+      (tags.length ? `[${tags.join(', ')}] ` : '') +
+      messageComps.join(' ').replace(/^\*\*\s+/, '');
 
     switch (level) {
       case 'error':

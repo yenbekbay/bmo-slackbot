@@ -131,12 +131,11 @@ class Brain {
       );
   }
 
-  _runCommand() {
-    const args = Array.prototype.slice.call(arguments);
+  _runCommand(command, ...options) {
     return Rx.Observable.fromNodeCallback(
-      this._redisClient[args[0]],
+      this._redisClient[command],
       this._redisClient
-    )(...args.slice(1));
+    )(...options);
   }
 
   _runBatch(commands) {
