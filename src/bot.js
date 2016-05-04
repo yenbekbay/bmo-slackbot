@@ -59,7 +59,7 @@ class Bot {
   }
 
   sayMessage(message) {
-    expect(message).to.be.an.object.and.to.include(['text', 'channel']);
+    expect(message).to.be.an.object().and.to.include(['text', 'channel']);
 
     return Rx.Observable
       .fromNodeCallback(this._bot.say)(message)
