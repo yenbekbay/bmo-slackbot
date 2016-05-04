@@ -34,7 +34,7 @@ const adventureTimeGifs = [
   'http://i.giphy.com/fHiz7HAUlSaIg.gif'
 ];
 
-class Commander {
+class Dispatcher {
   constructor(config) {
     this._bot = config.bot;
     this._logger = config.logger;
@@ -532,4 +532,4 @@ class Commander {
   }
 }
 
-module.exports = Commander;
+module.exports = Dispatcher;
