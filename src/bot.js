@@ -42,7 +42,7 @@ class Bot {
 
   sayError(channel) {
     return this.sayMessage({
-      channel: channel,
+      channel,
       text: 'Something went wrong. Please try again or contact @yenbekbay'
     });
   }

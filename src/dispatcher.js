@@ -53,24 +53,24 @@ class Dispatcher {
 
     this._commands = {
       greet: {
-        actions: options => {
-          const greeting = `@${options.user.name}: ` +
+        actions: ({ user, channel }) => {
+          const greeting = `@${user.name}: ` +
             greetings[Math.floor(Math.random() * greetings.length)];
 
           return this._bot.sayMessage({
-            channel: options.channel.id,
+            channel: channel.id,
             text: greeting
           });
         },
         description: 'Greeting'
       },
       adventureTime: {
-        actions: options => {
+        actions: ({ channel }) => {
           const index = Math.floor(Math.random() * adventureTimeGifs.length);
           const gif = adventureTimeGifs[index];
 
           return this._bot.sayMessage({
-            channel: options.channel.id,
+            channel: channel.id,
             text: 'Adventure time!',
             attachments: [{
               fallback: 'Adventure time GIF',
@@ -81,8 +81,8 @@ class Dispatcher {
         description: 'Sending an Adventure Time GIF'
       },
       welcomeUser: {
-        validate: options => options.channel.name !== 'intro',
-        actions: options => {
+        validate: ({ channel }) => channel.name !== 'intro',
+        actions: ({ channel, user }) => {
           const questions = [
             'Как тебя зовут?',
             'Чем ты занимаешься и/или на каких языках программирования ты ' +
@@ -91,24 +91,24 @@ class Dispatcher {
           ].map(question => `- ${question}`).join('\n');
 
           return this._bot.sayMessage({
-            channel: options.channel.id,
-            text: `Добро пожаловать, @${options.user.name}! Не мог бы ты ` +
+            channel: channel.id,
+            text: `Добро пожаловать, @${user.name}! Не мог бы ты ` +
               `вкратце рассказать о себе?\n${questions}`
           });
         },
         description: 'Welcoming'
       },
       getLibraryCategories: {
-        validate: options => !!options.platform,
-        actions: options => this._libraryEngine
-          .getCategories(options.platform)
+        validate: ({ platform }) => !!platform,
+        actions: ({ platform, channel }) => this._libraryEngine
+          .getCategories(platform)
           .flatMap(categoriesTree => {
             const formattedPlatform = LibraryEngine
-              .formattedPlatform(options.platform);
+              .formattedPlatform(platform);
             const pretext = `Library categories for ${formattedPlatform}:`;
 
             return this._bot.sayMessage({
-              channel: options.channel.id,
+              channel: channel.id,
               text: `${pretext}\n\`\`\`\n${categoriesTree}\n\`\`\``,
               mrkdwn: true
             });
@@ -116,16 +116,16 @@ class Dispatcher {
         description: 'Getting list of library categories'
       },
       getLibraries: {
-        validate: options => !!options.platform && !!options.query,
-        actions: options => {
-          const queryArgs = yargsParser(options.query);
+        validate: ({ platform, query }) => !!platform && !!query,
+        actions: ({ query, platform, channel }) => {
+          const queryArgs = yargsParser(query);
           const queryText = queryArgs._.join(' ');
 
           return this._libraryEngine
-            .getLibrariesForQuery(options.platform, queryText)
+            .getLibrariesForQuery(platform, queryText)
             .flatMap(libraries => {
               let message = {
-                channel: options.channel.id,
+                channel: channel.id,
                 text: 'Unfortunately, no libraries were found for ' +
                   `"${queryText}"`
               };
@@ -135,7 +135,7 @@ class Dispatcher {
                   libraries = libraries.filter(library => library.swift);
                 }
                 message.text = 'These are some ' +
-                  LibraryEngine.formattedPlatform(options.platform) +
+                  LibraryEngine.formattedPlatform(platform) +
                   ` libraries I found for "${queryText}"` +
                   `${queryArgs.swift ? ' (Swift only)' : ''}:`;
                 message.attachments = libraries.map(library => {
@@ -154,23 +154,23 @@ class Dispatcher {
         description: 'Getting libraries'
       },
       getTrendingRepos: {
-        actions: options => {
-          if (options.language) {
-            options.language = options.language.toLowerCase();
+        actions: ({ language, channel }) => {
+          if (language) {
+            language = language.toLowerCase();
           }
 
           return this._trendingEngine
-            .getTrendingRepos(options.language)
+            .getTrendingRepos(language)
             .flatMap(repos => {
               let message = {
-                channel: options.channel.id,
+                channel: channel.id,
                 text: 'I couldn\'t find any trending repos' +
-                  (options.language ? ` for ${options.language}` : '')
+                  (language ? ` for ${language}` : '')
               };
 
               if (repos && repos.length > 0) {
                 message.text = 'Trending repos for ' +
-                  `${options.language || 'all languages'}:`;
+                  `${language || 'all languages'}:`;
                 message.attachments = repos.map(repo => {
                   let attachment = {
                     fallback: repo.name,
@@ -204,40 +204,40 @@ class Dispatcher {
         description: 'Getting trending repos'
       },
       vote: {
-        validate: options => !!options.votedUser &&
-          ['++', '--'].indexOf(options.operator || '') > -1,
-        actions: options => {
+        validate: ({ votedUser, operator }) => !!votedUser &&
+          ['++', '--'].indexOf(operator || '') > -1,
+        actions: ({ votedUser, user, channel, operator }) => {
           let getVotedUser;
-          if (options.votedUser.id) {
-            getVotedUser = this._getUser(options.votedUser.id);
-          } else if (options.votedUser.name) {
-            getVotedUser = this._findUser(options.votedUser.name);
+          if (votedUser.id) {
+            getVotedUser = this._getUser(votedUser.id);
+          } else if (votedUser.name) {
+            getVotedUser = this._findUser(votedUser.name);
           } else {
-            getVotedUser = this._brain.getLastVotedUser(options.channel.id);
+            getVotedUser = this._brain.getLastVotedUser(channel.id);
           }
 
           return getVotedUser
             .flatMap(votedUser => {
               this._logger.info(votedUser);
               const vote = this.constructor._parseVote({
-                votingUser: options.user,
-                votedUser: votedUser,
-                operator: options.operator
+                votedUser,
+                operator,
+                votingUser: user
               });
 
               return this
                 ._bot.sayMessage({
-                  channel: options.channel.id,
+                  channel: channel.id,
                   text: vote.message
                 })
                 .flatMap(response => this._updateUserScore({
-                  channel: options.channel.id,
+                  channel: channel.id,
                   userId: votedUser.id,
                   points: vote.points
                 }))
                 .doOnNext(scores => {
-                  const direction = options.operator === '++' ? 'up' : 'down';
-                  this._logger.info(`User ${options.user.name} ` +
+                  const direction = operator === '++' ? 'up' : 'down';
+                  this._logger.info(`User ${user.name} ` +
                     `${direction}voted user ${votedUser.name}`);
                 });
             });
@@ -245,20 +245,20 @@ class Dispatcher {
         description: 'Processing vote'
       },
       userScore: {
-        validate: options => !!options.requestedUser &&
-          (options.requestedUser.name || options.requestedUser.id),
-        actions: options => {
+        validate: ({ requestedUser }) => !!requestedUser &&
+          (requestedUser.name || requestedUser.id),
+        actions: ({ requestedUser, channel }) => {
           let getUser;
-          if (options.requestedUser.id) {
-            getUser = this._getUser(options.requestedUser.id);
-          } else if (options.requestedUser.name) {
-            getUser = this._findUser(options.requestedUser.name);
+          if (requestedUser.id) {
+            getUser = this._getUser(requestedUser.id);
+          } else if (requestedUser.name) {
+            getUser = this._findUser(requestedUser.name);
           }
 
           return getUser.flatMap(user => this._brain
             .getUserScore(user.id)
             .flatMap(score => this._bot.sayMessage({
-              channel: options.channel.id,
+              channel: channel.id,
               text: `@${user.name}: your score is: ${score}`
             }))
           );
@@ -266,10 +266,10 @@ class Dispatcher {
         description: 'Getting score'
       },
       leaderboard: {
-        actions: options => this
+        actions: ({ channel }) => this
           ._getUserScores()
           .flatMap(scores => this._bot.sayMessage({
-            channel: options.channel.id,
+            channel: channel.id,
             text: scores,
             mrkdwn: true
           })),
@@ -313,13 +313,12 @@ class Dispatcher {
 
         return true;
       })
-      .doOnNext(options => {
-        let message = `${command.description} for user ${options.user.name} `;
-        let channelName = options.channel.name;
-        if (['direct message', 'private channel'].indexOf(channelName) > -1) {
-          message += `in ${channelName}`;
+      .doOnNext(({ user, channel }) => {
+        let message = `${command.description} for user ${user.name} `;
+        if (['direct message', 'private channel'].indexOf(channel.name) > -1) {
+          message += `in ${channel.name}`;
         } else {
-          message += `in channel ${channelName}`;
+          message += `in channel ${channel.name}`;
         }
 
         this._logger.info(message);
@@ -370,15 +369,15 @@ class Dispatcher {
   _updateUsers() {
     return this._bot
       .getUsers()
-      .map(users => users.map(rawUser => {
+      .map(users => users.map(({ id, name, is_admin, profile }) => {
         const user = {
-          id: rawUser.id,
-          name: rawUser.name,
-          first_name: rawUser.profile.first_name,
-          last_name: rawUser.profile.last_name,
-          real_name: rawUser.profile.real_name,
-          email: rawUser.profile.email,
-          is_admin: rawUser.is_admin
+          id,
+          name,
+          is_admin,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          real_name: profile.real_name,
+          email: profile.email
         };
 
         Object.keys(user).forEach(key => {
@@ -438,19 +437,16 @@ class Dispatcher {
     return Rx.Observable
       .zip(
         this._brain.getUserScores(),
-        this._brain.getUsers(),
-        (scores, users) => {
-          return { scores: scores, users: users };
-        }
+        this._brain.getUsers()
       )
-      .map(results => Object.keys(results.scores || {})
+      .map(([scores, users]) => Object.keys(scores || {})
         .map(userId => {
-          const user = results.users.find(user => user.id === userId);
+          const user = users.find(user => user.id === userId);
           const username = (user || {}).name;
 
           return {
             username: username ? `@${username}` : 'mystery',
-            points: parseInt(results.scores[userId], 10)
+            points: parseInt(scores[userId], 10)
           };
         })
         .filter(score => score.points > 0)
@@ -486,46 +482,41 @@ class Dispatcher {
       });
   }
 
-  _updateUserScore(scoreInfo) {
-    if (!scoreInfo.channel || !scoreInfo.userId) {
-      throw new Error(`Invalid score information: ${stringify(scoreInfo)}`);
-    }
-
-    if (!scoreInfo.points) {
+  _updateUserScore({ channel, userId, points }) {
+    if (!points) {
       return Rx.Observable.empty();
     }
 
     return this._brain
-      .setLastVotedUser(scoreInfo.channel, scoreInfo.userId)
-      .flatMap(lastVotedUser => this._brain
-        .incrementUserScore(scoreInfo.userId, scoreInfo.points)
-      );
+      .setLastVotedUser(channel, userId)
+      .flatMap(lastVotedUser => this._brain.incrementUserScore(userId, points));
   }
 
-  static _parseVote(voteInfo) {
-    if (!voteInfo.votingUser && !voteInfo.votedUser) {
-      throw new Error(`Invalid vote information: ${stringify(voteInfo)}`);
-    } else if (voteInfo.votingUser && !voteInfo.votedUser) {
+  static _parseVote({ votingUser, votedUser, operator }) {
+    expect(votingUser).to.be.an.object();
+    expect(operator).to.be.a.string();
+
+    if (!votedUser) {
       return {
         message: 'Please specify the username',
         points: 0
       };
-    } else if (voteInfo.votingUser.id === voteInfo.votedUser.id) {
+    } else if (votingUser.id === votedUser.id) {
       return {
-        message: `@${voteInfo.votingUser.name}: No cheating 😏`,
+        message: `@${votingUser.name}: No cheating 😏`,
         points: 0
       };
     }
 
-    switch (voteInfo.operator) {
+    switch (operator) {
       case '++':
         return {
-          message: `Upvoted @${voteInfo.votedUser.name} 😃`,
+          message: `Upvoted @${votedUser.name} 😃`,
           points: 1
         };
       case '--':
         return {
-          message: `Downvoted @${voteInfo.votedUser.name} 😔`,
+          message: `Downvoted @${votedUser.name} 😔`,
           points: -1
         };
     }
