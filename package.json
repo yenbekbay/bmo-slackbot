@@ -29,7 +29,7 @@
     "botkit": "^0.1.1",
     "cheerio": "^0.20.0",
     "clark": "0.0.6",
-    "code": "^2.2.1",
+    "code": "^3.0.0",
     "colors": "^1.1.2",
     "dotenv": "^2.0.0",
     "json-stringify-safe": "^5.0.1",
